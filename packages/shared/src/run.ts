@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ExtractionSchema, FIELD_KEYS, type FieldKey } from "./extraction.ts";
+import { ExtractionSchema, FIELD_KEYS, type FieldKey } from "./extraction";
 
 export const STRATEGIES = ["zero_shot", "few_shot", "cot"] as const;
 export type Strategy = (typeof STRATEGIES)[number];

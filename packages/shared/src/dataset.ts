@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ExtractionSchema, type Extraction } from "./extraction.ts";
+import { ExtractionSchema, type Extraction } from "./extraction";
 
 export interface DatasetCase {
   id: string; // e.g. "case_001"

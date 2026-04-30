@@ -18,7 +18,8 @@ app.use(
 );
 
 if (auth) {
-  app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+  const authInstance = auth;
+  app.on(["POST", "GET"], "/api/auth/*", (c) => authInstance.handler(c.req.raw));
 }
 
 app.get("/", (c) => c.text("OK"));

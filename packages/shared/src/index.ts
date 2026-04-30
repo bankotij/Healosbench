@@ -1,3 +1,3 @@
-export * from "./extraction.ts";
-export * from "./run.ts";
-export * from "./dataset.ts";
+export * from "./extraction";
+export * from "./run";
+export * from "./dataset";
