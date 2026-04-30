@@ -17,10 +17,13 @@ app.use(
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+if (auth) {
+  app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+}
 
-app.get("/", (c) => {
-  return c.text("OK");
-});
+app.get("/", (c) => c.text("OK"));
+app.get("/health", (c) =>
+  c.json({ ok: true, model: env.DEFAULT_MODEL, ts: new Date().toISOString() }),
+);
 
 export default app;

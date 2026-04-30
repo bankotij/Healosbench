@@ -1,0 +1,20 @@
+{
+  "name": "@test-evals/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./extraction": "./src/extraction.ts",
+    "./run": "./src/run.ts",
+    "./dataset": "./src/dataset.ts"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@test-evals/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

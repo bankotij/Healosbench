@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: healosbench-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: healosbench
+    # Use 5433 on the host to avoid conflicting with a local Postgres
+    # that may already bind 127.0.0.1:5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - healosbench_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d healosbench"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  healosbench_pg_data:
