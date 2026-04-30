@@ -13,10 +13,12 @@
  * successfully (no schema_failures past the retry loop, no failed cases).
  */
 
+import { CostExceedsCapError } from "@test-evals/llm";
 import { STRATEGIES, type Strategy } from "@test-evals/shared";
 
 import {
   createRun,
+  estimateRun,
   getRunCases,
   getRunSummary,
   startRun,
@@ -28,10 +30,12 @@ interface CliArgs {
   model?: string;
   filter?: string[];
   force: boolean;
+  maxCost?: number;
+  estimateOnly: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: Partial<CliArgs> = { force: false };
+  const args: Partial<CliArgs> = { force: false, estimateOnly: false };
   for (const raw of argv) {
     if (!raw.startsWith("--")) continue;
     const [key, value] = raw.slice(2).split("=", 2);
@@ -53,6 +57,17 @@ function parseArgs(argv: string[]): CliArgs {
       case "force":
         args.force = true;
         break;
+      case "max-cost": {
+        if (!value) die("--max-cost needs a value (USD)");
+        const n = Number(value);
+        if (!Number.isFinite(n) || n <= 0) die(`--max-cost must be a positive number, got ${value}`);
+        args.maxCost = n;
+        break;
+      }
+      case "estimate":
+      case "dry-run":
+        args.estimateOnly = true;
+        break;
       case "help":
       case "h":
         printHelp();
@@ -73,6 +88,10 @@ Options:
   --model=<name>          Override DEFAULT_MODEL (e.g. claude-haiku-4-5-20251001)
   --filter=<id,id,...>    Restrict to specific case ids (comma-separated)
   --force                 Bypass idempotency cache; re-run every case
+  --max-cost=<usd>        Cost guardrail. Refuse to start if projected
+                          cost > N. Estimate is pre-flight (no LLM call).
+  --estimate, --dry-run   Print the cost estimate and exit (no LLM calls,
+                          no DB writes).
   --help, -h              This help text
 `);
 }
@@ -88,13 +107,42 @@ async function main(): Promise<void> {
   if (args.model) process.stdout.write(`▸ Model: ${args.model}\n`);
   if (args.filter) process.stdout.write(`▸ Filter: ${args.filter.length} cases\n`);
   if (args.force) process.stdout.write(`▸ Force: bypassing idempotency cache\n`);
+  if (args.maxCost != null) process.stdout.write(`▸ Cost cap: $${args.maxCost.toFixed(4)}\n`);
 
-  const run = await createRun({
+  // Pre-flight estimate. Always print it; if --estimate, exit here.
+  const estimate = await estimateRun({
     strategy: args.strategy,
-    model: args.model,
-    dataset_filter: args.filter,
-    force: args.force,
+    model: args.model ?? null,
+    dataset_filter: args.filter ?? null,
   });
+  const b = estimate.breakdown;
+  process.stdout.write(
+    `▸ Estimate: ${b.cases} case(s) · ~${fmt(b.usage.input)}+${fmt(b.usage.cache_read)}+${fmt(b.usage.cache_write)} in · ~${fmt(b.usage.output)} out · projected $${b.cost_usd.toFixed(4)} (no-cache: $${b.cost_usd_no_cache.toFixed(4)})\n`,
+  );
+  if (args.estimateOnly) {
+    process.stdout.write("\n(--estimate set, exiting before any LLM calls)\n");
+    process.exit(0);
+  }
+
+  let run;
+  try {
+    run = await createRun({
+      strategy: args.strategy,
+      model: args.model,
+      dataset_filter: args.filter,
+      force: args.force,
+      max_cost_usd: args.maxCost,
+    });
+  } catch (err) {
+    if (err instanceof CostExceedsCapError) {
+      process.stderr.write(
+        `\nrefusing to start: projected cost $${err.projected_cost_usd.toFixed(4)} exceeds cap $${err.max_cost_usd.toFixed(4)}\n`,
+      );
+      process.stderr.write(`(re-run without --max-cost or raise the cap)\n`);
+      process.exit(3);
+    }
+    throw err;
+  }
   process.stdout.write(`▸ Run ID: ${run.run_id}\n`);
   process.stdout.write(`▸ Prompt hash: ${run.prompt_hash.slice(0, 12)}\n`);
   process.stdout.write(`▸ Cases: ${run.cases_total}\n\n`);

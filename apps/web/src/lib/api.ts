@@ -146,6 +146,45 @@ export async function getCaseDetail(
   return (await res.json()) as CaseDetailResponse;
 }
 
+// ---------- pre-flight cost estimate ---------------------------------------
+
+export interface RunEstimate {
+  strategy: Strategy;
+  model: string;
+  cases_total: number;
+  breakdown: {
+    prefix_tokens: number;
+    per_case_input_tokens_avg: number;
+    output_tokens_per_case: number;
+    cases: number;
+    usage: {
+      input: number;
+      output: number;
+      cache_read: number;
+      cache_write: number;
+    };
+    cost_usd: number;
+    cost_usd_no_cache: number;
+  };
+}
+
+export async function estimateRun(req: {
+  strategy: Strategy;
+  model?: string;
+  dataset_filter?: string[];
+}): Promise<RunEstimate> {
+  const res = await fetch(`${BASE}/api/v1/runs/estimate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`estimateRun ${res.status}: ${txt}`);
+  }
+  return (await res.json()) as RunEstimate;
+}
+
 // ---------- disagreements (active-learning hint) ---------------------------
 
 export interface DisagreementContributor {
@@ -185,12 +224,36 @@ export interface CreateRunResponse {
   prompt_hash: string;
 }
 
+export class CostCapError extends Error {
+  readonly projected_cost_usd: number;
+  readonly max_cost_usd: number;
+  constructor(args: { projected_cost_usd: number; max_cost_usd: number }) {
+    super(
+      `Projected cost $${args.projected_cost_usd.toFixed(4)} exceeds cap $${args.max_cost_usd.toFixed(4)}`,
+    );
+    this.name = "CostCapError";
+    this.projected_cost_usd = args.projected_cost_usd;
+    this.max_cost_usd = args.max_cost_usd;
+  }
+}
+
 export async function createRun(req: CreateRunRequest): Promise<CreateRunResponse> {
   const res = await fetch(`${BASE}/api/v1/runs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
+  if (res.status === 412) {
+    const body = (await res.json().catch(() => null)) as
+      | { error: string; projected_cost_usd: number; max_cost_usd: number }
+      | null;
+    if (body && body.error === "cost_exceeds_cap") {
+      throw new CostCapError({
+        projected_cost_usd: body.projected_cost_usd,
+        max_cost_usd: body.max_cost_usd,
+      });
+    }
+  }
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`createRun ${res.status}: ${txt}`);

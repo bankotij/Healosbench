@@ -134,6 +134,14 @@ export const CreateRunRequestSchema = z.object({
   dataset_filter: z.array(z.string().min(1)).optional(),
   /** If true, bypass idempotency cache and force re-execution. */
   force: z.boolean().optional(),
+  /**
+   * Cost guardrail: if set, the server pre-flight-estimates the run and
+   * refuses to start if `projected_cost_usd > max_cost_usd`. Set to a
+   * generous number to effectively disable. Best practice: set this on every
+   * production-style run so a configuration mistake (Opus + force=true on
+   * the full set) can't quietly burn through your budget.
+   */
+  max_cost_usd: z.number().positive().optional(),
 });
 export type CreateRunRequest = z.infer<typeof CreateRunRequestSchema>;
 

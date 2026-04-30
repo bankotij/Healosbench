@@ -15,6 +15,9 @@ export { promptHash, canonicalJSON } from "./hash";
 export { costUsd, pricingFor } from "./pricing";
 export type { ModelPricing } from "./pricing";
 
+export { estimateCost, CostExceedsCapError } from "./estimate";
+export type { EstimateInput, EstimateBreakdown } from "./estimate";
+
 export { getStrategy, STRATEGY_REGISTRY } from "./strategies/index";
 export type { PromptStrategy } from "./strategies/index";
 export type { PromptMessage } from "./strategies/types";

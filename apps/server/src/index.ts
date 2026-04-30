@@ -1,13 +1,16 @@
 import { auth } from "@test-evals/auth";
 import { env } from "@test-evals/env/server";
-import { CreateRunRequestSchema } from "@test-evals/shared";
+import { CostExceedsCapError } from "@test-evals/llm";
+import { CreateRunRequestSchema, StrategySchema } from "@test-evals/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { streamSSE } from "hono/streaming";
+import { z } from "zod";
 
 import {
   createRun,
+  estimateRun,
   getCaseDetail,
   getRunCases,
   getRunSummary,
@@ -49,9 +52,51 @@ app.post("/api/v1/runs", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
   }
-  const result = await createRun(parsed.data);
-  startRun(result.run_id, { force: parsed.data.force ?? false });
-  return c.json(result, 201);
+  try {
+    const result = await createRun(parsed.data);
+    startRun(result.run_id, { force: parsed.data.force ?? false });
+    return c.json(result, 201);
+  } catch (err) {
+    if (err instanceof CostExceedsCapError) {
+      return c.json(
+        {
+          error: "cost_exceeds_cap",
+          projected_cost_usd: err.projected_cost_usd,
+          max_cost_usd: err.max_cost_usd,
+          breakdown: err.breakdown,
+        },
+        412,
+      );
+    }
+    throw err;
+  }
+});
+
+app.post("/api/v1/runs/estimate", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = z
+    .object({
+      strategy: StrategySchema,
+      model: z.string().min(1).optional(),
+      dataset_filter: z.array(z.string().min(1)).optional(),
+    })
+    .safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  }
+  try {
+    const view = await estimateRun({
+      strategy: parsed.data.strategy,
+      model: parsed.data.model ?? null,
+      dataset_filter: parsed.data.dataset_filter ?? null,
+    });
+    return c.json(view);
+  } catch (err) {
+    return c.json(
+      { error: "estimate_failed", message: err instanceof Error ? err.message : String(err) },
+      400,
+    );
+  }
 });
 
 app.get("/api/v1/runs", async (c) => {

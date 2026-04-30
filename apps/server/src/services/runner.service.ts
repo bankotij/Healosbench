@@ -7,10 +7,13 @@ import { attempts, cases, prompts, runs, type Run } from "@test-evals/db/schema/
 import { env } from "@test-evals/env/server";
 import { evaluateCase } from "@test-evals/eval";
 import {
+  CostExceedsCapError,
   Semaphore,
   costUsd,
+  estimateCost,
   getStrategy,
   promptHash as computePromptHash,
+  type EstimateBreakdown,
 } from "@test-evals/llm";
 import {
   ZERO_USAGE,
@@ -83,6 +86,22 @@ export async function createRun(input: CreateRunRequest): Promise<CreateRunResul
   });
   if (dataset.length === 0) {
     throw new Error("Dataset is empty after applying filter");
+  }
+
+  // Cost guardrail: if the caller set a cap, refuse before we touch the DB.
+  if (input.max_cost_usd != null) {
+    const breakdown = estimateCost({
+      strategy: strategyId,
+      model,
+      transcripts: dataset.map((c) => c.transcript),
+    });
+    if (breakdown.cost_usd > input.max_cost_usd) {
+      throw new CostExceedsCapError({
+        projected_cost_usd: breakdown.cost_usd,
+        max_cost_usd: input.max_cost_usd,
+        breakdown,
+      });
+    }
   }
 
   const runId = randomUUID();
@@ -630,6 +649,40 @@ async function markCaseFailed(
 
 // `addUsage` is exported indirectly (used by the CLI to aggregate).
 export { addUsage };
+
+// ---------- pre-flight cost estimate ---------------------------------------
+
+export interface RunEstimateView {
+  strategy: Strategy;
+  model: string;
+  cases_total: number;
+  breakdown: EstimateBreakdown;
+}
+
+export async function estimateRun(input: {
+  strategy: Strategy;
+  model?: string | null;
+  dataset_filter?: string[] | null;
+}): Promise<RunEstimateView> {
+  const model = input.model ?? env.DEFAULT_MODEL;
+  const dataset = await loadDataset({
+    filter: input.dataset_filter ?? undefined,
+  });
+  if (dataset.length === 0) {
+    throw new Error("Dataset is empty after applying filter");
+  }
+  const breakdown = estimateCost({
+    strategy: input.strategy,
+    model,
+    transcripts: dataset.map((c) => c.transcript),
+  });
+  return {
+    strategy: input.strategy,
+    model,
+    cases_total: dataset.length,
+    breakdown,
+  };
+}
 
 // ---------- active-learning: disagreement across runs ----------------------
 //
