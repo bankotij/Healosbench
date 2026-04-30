@@ -112,6 +112,19 @@
         "typescript": "catalog:",
       },
     },
+    "packages/eval": {
+      "name": "@test-evals/eval",
+      "version": "0.0.0",
+      "dependencies": {
+        "@test-evals/shared": "workspace:*",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@test-evals/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/llm": {
       "name": "@test-evals/llm",
       "version": "0.0.0",
@@ -554,6 +567,8 @@
     "@test-evals/db": ["@test-evals/db@workspace:packages/db"],
 
     "@test-evals/env": ["@test-evals/env@workspace:packages/env"],
+
+    "@test-evals/eval": ["@test-evals/eval@workspace:packages/eval"],
 
     "@test-evals/llm": ["@test-evals/llm@workspace:packages/llm"],
 
