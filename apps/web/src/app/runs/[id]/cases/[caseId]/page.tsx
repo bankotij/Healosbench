@@ -4,9 +4,12 @@ import { notFound } from "next/navigation";
 import { AttemptTrace } from "@/components/eval/attempt-trace";
 import { ExtractionDiff } from "@/components/eval/extraction-diff";
 import { CaseStatusBadge } from "@/components/eval/status-badge";
+import { TranscriptHighlight } from "@/components/eval/transcript-highlight";
 import type { CaseDetailResponse } from "@/lib/api";
 import { fmtCost, fmtDuration, fmtTokens, shortHash } from "@/lib/format";
+import { findGroundingSpans } from "@test-evals/eval";
 import { env } from "@test-evals/env/web";
+import type { Extraction } from "@test-evals/shared/extraction";
 import type { FieldKey } from "@test-evals/shared/run";
 
 export const dynamic = "force-dynamic";
@@ -111,9 +114,13 @@ export default async function CaseDetailPage({
         <div className="space-y-2">
           <h2 className="text-sm font-semibold">Transcript</h2>
           <div className="rounded-lg border bg-card p-4 max-h-[28rem] overflow-y-auto">
-            <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">
-              {detail.transcript ?? "(transcript unavailable)"}
-            </pre>
+            <TranscriptHighlight
+              transcript={detail.transcript ?? ""}
+              spans={findGroundingSpans(
+                (c.prediction as Extraction | null) ?? null,
+                detail.transcript ?? "",
+              )}
+            />
           </div>
         </div>
 

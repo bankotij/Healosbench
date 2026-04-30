@@ -33,3 +33,6 @@ export type { FollowUpScore } from "./follow_up";
 
 export { detectHallucinations } from "./hallucination";
 export type { HallucinationReport } from "./hallucination";
+
+export { findGroundingSpans } from "./grounding";
+export type { GroundingSpan } from "./grounding";

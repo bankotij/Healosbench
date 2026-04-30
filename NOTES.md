@@ -463,6 +463,22 @@ requirements first.
 - **No proper auth.** The README marks `packages/auth` as ignorable.
   The dashboard is open on localhost.
 
+> **Closed gap (post-audit):** the README §4 case-detail spec asked for
+> "the transcript (highlighted where prediction values are grounded)".
+> The first version of the page rendered the transcript as plain text
+> with the grounding signal only visible via the "Ungrounded values"
+> list. After a final pass against the spec I added
+> `packages/eval/src/grounding.ts` (a pure span-builder that mirrors the
+> hallucination detector's policy: skip diagnoses, skip medication
+> frequency / route, treat numeric vitals as raw lexemes) plus
+> `apps/web/src/components/eval/transcript-highlight.tsx` (renders the
+> transcript with exact / partial-token tiers and per-span tooltips
+> naming the supporting field). Spans are computed server-side in the
+> case-detail page and passed as props so no metric logic ships to the
+> client. 10 new tests in `grounding.test.ts` cover the exact / partial
+> tiers, the diagnosis exclusion, span merging, and the
+> short-value-pathology guard.
+
 ## What I'd build next
 
 1. **Per-field-error explorer.** Group all flagged cases by the actual
