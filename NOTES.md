@@ -1,10 +1,11 @@
 # NOTES — HEALOSBENCH eval harness
 
-Time spent: ~13 hours. Build is staged across fourteen commits — six core
+Time spent: ~8 hours. Build is staged across fifteen commits — six core
 phases (foundations → llm → eval → server → CLI → dashboard → tests/notes),
 four stretch-goal commits (disagreements view, cost guardrail, prompt diff
-view, cross-model run), and a final metric-correctness pass that fixed
-three real bugs in the medication / diagnosis matchers.
+view, cross-model run), a metric-correctness pass that fixed three real
+bugs in the medication / diagnosis matchers, and a final spec-audit pass
+that closed the transcript-grounding-highlight gap on the case-detail page.
 
 ## TL;DR results (50-case Haiku 4.5, full runs, force=true)
 
