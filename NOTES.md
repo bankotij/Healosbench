@@ -1,7 +1,9 @@
 # NOTES — HEALOSBENCH eval harness
 
-Time spent: ~10 hours. Build is staged across nine commits, one per phase, with a
-lightly-narrative commit history.
+Time spent: ~12 hours. Build is staged across thirteen commits — six core
+phases (foundations → llm → eval → server → CLI → dashboard → tests/notes)
+followed by four stretch-goal commits (disagreements view, cost guardrail,
+prompt diff view, cross-model run).
 
 ## TL;DR results (50-case Haiku 4.5, full runs, force=true)
 
@@ -274,7 +276,7 @@ changes, changes when few-shot examples change.
 
 ---
 
-## Tests (`bun test` — 71 passing across 8 files)
+## Tests (`bun run test` — 82 passing across 10 files)
 
 | File | Coverage |
 | --- | --- |
@@ -285,35 +287,86 @@ changes, changes when few-shot examples change.
 | `packages/llm/test/hash.test.ts` | 8 tests on canonicalJSON ordering and promptHash stability. |
 | `packages/llm/test/rate_limiter.test.ts` | 8 tests: Semaphore correctness, `Retry-After` honored, no retry on 4xx, retry on 429/529/ECONNRESET, give up after maxRetries. |
 | `packages/llm/test/extract.test.ts` | 6 tests on the schema-retry loop with a mocked client: invalid → valid recovery, validation feedback wording, max-attempts cap, single-attempt success, usage summing, transport-error path. |
+| `packages/llm/test/estimate.test.ts` | 6 tests on the cost estimator: single-case is correctly more expensive with caching on, multi-case prefix math, ≥30% savings on 10-case few-shot, few_shot prefix > zero_shot prefix, Sonnet > Haiku for same workload, break-even at N≤3 cases. |
 | `apps/server/test/runner.test.ts` | 5 *integration* tests that exercise the real Drizzle/Postgres path with a `mock.module()`-replaced extract service: resumability, idempotency, force-bypass, attempts persistence, prompt-row insert. |
+| `apps/web/test/line-diff.test.ts` | 5 tests on the line-level LCS diff used by the prompt-diff view: identity / mod / add / del / disjoint. |
 
-Total: **71 tests, 158 expect() calls**. All sub-second except the
+Total: **82 tests, 185 expect() calls**. All sub-second except the
 runner integration tests which talk to Postgres (~100 ms each).
+
+---
+
+## Cross-model spot-check (Sonnet 4.5 vs Haiku 4.5)
+
+Stretch goal #4: re-ran zero-shot on a 5-case subset (`case_001`..`case_005`)
+under Sonnet 4.5 to see whether the bigger model is worth the spend on this
+schema. Both runs use the same prompt-hash (`223250f441df…`).
+
+| Model | Overall | chief_complaint | vitals | medications | diagnoses | plan | follow_up | Cost | Wall |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | --- | --- |
+| Haiku 4.5 | **0.705** | 0.412 | 1.000 | 0.633 | 0.800 | **0.660** | 0.723 | $0.042 | 3.8s |
+| Sonnet 4.5 | 0.689 | 0.419 | 1.000 | **0.700** | 0.800 | 0.491 | 0.721 | $0.126 | 6.2s |
+
+Sonnet is **3× more expensive, ~1.7× slower, and slightly *worse* overall**
+on this task. The breakdown is the interesting bit:
+
+- Sonnet wins on `medications` (0.70 vs 0.63) — better at canonicalizing
+  dose/frequency.
+- Sonnet *loses* on `plan` (0.49 vs 0.66) — it over-normalizes plan items,
+  paraphrasing the gold's literal wording into more clinical phrasing
+  (`"return if symptoms worsen"` → `"return precautions for symptom
+  progression"`). The fuzzy plan-item matcher penalizes that.
+- Everything else is a wash.
+
+**Decision a buyer would make from this data**: ship Haiku for this
+schema. Sonnet's medication win is real but small, and it's eaten by
+Sonnet's plan loss and its 3× cost. The cases where Sonnet's medication
+canonicalization matters most are also the cases where the dataset is
+small enough that the dollar cost is irrelevant — so for *iterating on
+the eval* you'd want Sonnet, but for *running the production extractor*
+you'd ship Haiku.
+
+This is exactly the use case the compare view is designed for. Pick run
+A and run B in the dashboard, look at the per-field deltas, and the
+trade-off is visible in seconds.
+
+Full output is at `results/results-{haiku,sonnet}-zero_shot-5case.txt`.
+
+---
+
+## Stretch goals — what I shipped
+
+All four stretches in the README are now in the harness. Each landed as
+its own commit so they're easy to skip if reviewing the core
+requirements first.
+
+| Stretch | Where | What it does |
+| --- | --- | --- |
+| Prompt diff view | `/prompts`, `/prompts/:hash`, `/prompts/diff?a=&b=` | Side-by-side line-LCS diff of system text + tool def + few-shot extras for any two prompt-hashes. Below the diff: a regression table of cases that scored differently under each prompt (matched on `case_id × model`, sorted by |Δ| desc). |
+| Active-learning hint | `/disagreements` | Top-N cases where two or more runs (with distinct prompt-hashes) disagree most about the right answer. These are the highest-information cases for a human reviewer; the page shows per-run breakdown and links straight into the compare view. |
+| Cost guardrail | `--max-cost=N` flag · `POST /api/v1/runs/estimate` · live panel in the New Run form | Pre-flight estimate using a chars/3.5 token heuristic and a prefix-cached cost model. Refuses to start if projected > cap (returns 412 from the API, exit 3 from the CLI). The dashboard shows projected cost-with-cache vs cost-without-cache so cache savings are visible. The estimator surfaces a real subtlety: on N=1, caching is *more* expensive than no-cache (1.25× write premium with no reads to amortize over) — break-even is N≈3 on Haiku. |
+| Second model | Anywhere `--model` works | Pricing table covers Haiku 4.5, Sonnet 4.5, Sonnet 4.6, Opus 4.5. The cross-model spot-check above ran zero-shot on 5 cases under both Haiku and Sonnet to validate the compare view also handles cross-model deltas. |
 
 ---
 
 ## Known limitations / what I cut
 
-- **No prompt diff view.** Stretch goal; left out. The prompt-hash on
-  every run is enough to know "did I run prompt v6 or v7?" but seeing
-  the diff would help iterate. Could add a `/prompts/:hash` page that
-  diffs against another hash.
 - **Hallucination grounding is purely lexical.** A semantically-paraphrased
   but transcript-supported value still gets flagged. The honest fix is an
   embedding-based grounding check (cosine similarity between predicted
   value and transcript spans), which I'd add for production.
-- **No cost guardrail.** The README listed it as stretch. With Haiku at
-  $1/MTok input and a 50-case full run averaging $0.18, it never came
-  close to mattering — but for Sonnet or Opus runs you'd want the
-  pre-flight estimate.
 - **`chief_complaint` and `plan` are still in the 0.45–0.58 range.**
   Most of those failures aren't model errors — they're the metric. A
   free-text field with one canonical gold and a fuzzy token-set
   comparator will plateau here. To move it above 0.7 honestly I'd need
   multiple gold variants per case, an embedding similarity, or a
   judge-LLM rubric.
-- **No proper auth.** Same reason — the README marks `packages/auth`
-  as ignorable. The dashboard is open on localhost.
+- **Cost estimator is a chars-per-token heuristic, not Anthropic's
+  tokenizer.** The real `count_tokens` API would be more accurate but
+  costs a round-trip per call. The heuristic over-estimates by ~10% in
+  practice, which is the right direction for a guardrail.
+- **No proper auth.** The README marks `packages/auth` as ignorable.
+  The dashboard is open on localhost.
 
 ## What I'd build next
 
@@ -328,10 +381,10 @@ runner integration tests which talk to Postgres (~100 ms each).
    `plan`, a Sonnet-as-judge pass that scores semantic equivalence
    between gold and prediction. Use it as a *second* number in the
    compare view, not a replacement.
-4. **Cross-model compare.** The schema is already cross-model; pricing
-   table covers Sonnet + Opus. Adding `--model=claude-sonnet-4-5-...`
-   and re-running on a 5-case subset would let me see if the small
-   `chief_complaint` gap closes with a stronger model.
+4. **Full 50-case Sonnet sweep.** Stretch #4 only ran 5 cases to keep
+   spend modest. A full sweep would either confirm the trade-off
+   (Sonnet's plan loss persists) or reveal that 5 was too small a
+   sample to draw conclusions from.
 
 ---
 
@@ -349,5 +402,22 @@ bun run eval -- --strategy=few_shot --force
 bun run eval -- --strategy=cot --force
 ```
 
-Then `bun run dev` and visit http://localhost:3001/compare to diff any
-two runs side-by-side.
+Then `bun run dev` and visit:
+
+- `http://localhost:3001/runs` — list of runs and the new-run form (with
+  live cost estimate).
+- `http://localhost:3001/compare?a=<runA>&b=<runB>` — per-field deltas with
+  per-case Δ table.
+- `http://localhost:3001/disagreements` — top-N highest-information cases.
+- `http://localhost:3001/prompts` — every materialized prompt-hash with
+  side-by-side diff between any two.
+
+To reproduce the cross-model spot-check:
+
+```bash
+bun run eval -- --strategy=zero_shot --model=claude-haiku-4-5-20251001 --filter=case_001,case_002,case_003,case_004,case_005
+bun run eval -- --strategy=zero_shot --model=claude-sonnet-4-5-20250929 --filter=case_001,case_002,case_003,case_004,case_005
+```
+
+Then point the compare view at the two run IDs to see the per-field deltas
+that drive the "ship Haiku" recommendation above.

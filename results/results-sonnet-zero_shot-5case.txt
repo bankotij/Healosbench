@@ -1,0 +1,31 @@
+$ bun apps/server/src/cli/eval.ts "--strategy=zero_shot" "--model=claude-sonnet-4-5-20250929" "--filter=case_001,case_002,case_003,case_004,case_005"
+▸ Strategy: zero_shot
+▸ Model: claude-sonnet-4-5-20250929
+▸ Filter: 5 cases
+▸ Estimate: 5 case(s) · ~1,355+17,572+4,393 in · ~2,200 out · projected $0.0588 (no-cache: $0.1030)
+▸ Run ID: dc121069-8420-4141-81fd-32a5666d46d4
+▸ Prompt hash: 223250f441df
+▸ Cases: 5
+
+  1  /5  done  · 0  failed  · mean=0.738  · 5.2s     2  /5  done  · 0  failed  · mean=0.734  · 5.7s     3  /5  done  · 0  failed  · mean=0.734  · 5.8s     4  /5  done  · 0  failed  · mean=0.682  · 6.0s     5  /5  done  · 0  failed  · mean=0.688  · 6.2s   
+
+Strategy:      zero_shot
+Model:         claude-sonnet-4-5-20250929
+Prompt hash:   223250f441df39a52be7c5e3b7a9b5c00b848643bed8cf277abeda5883b7c9ab
+Cases:         5/5 completed (0 failed, 0 schema-invalid, 0 cached)
+Tokens:        3,497 in · 2,074 out · 0 cache_read · 22,525 cache_write
+Cost:          $0.1261
+Wall:          6.2s
+Hallucinated:  0 flagged values across 0 cases
+
+Per-field scores:
+  Field               Mean Score  
+  ------------------  ------------
+  chief_complaint     0.4192      
+  vitals              1.0000      
+  medications         0.7000      
+  diagnoses           0.8000      
+  plan                0.4905      
+  follow_up           0.7212      
+
+Overall:       0.6885
