@@ -1,6 +1,6 @@
 import type { Diagnosis } from "@test-evals/shared";
 
-import { tokenSetRatio } from "./text";
+import { tokens, tokenSetRatio } from "./text";
 
 /**
  * Set-based F1 over diagnoses by fuzzy `description` match. ICD-10 codes
@@ -16,6 +16,30 @@ import { tokenSetRatio } from "./text";
  */
 
 const DESC_THRESHOLD = 0.7;
+/**
+ * Score we assign when one description's normalized token set is a strict
+ * subset of the other's (e.g. gold "chronic constipation" vs pred
+ * "constipation"). The model identified the right condition; one side is
+ * strictly more specific. Above DESC_THRESHOLD so it counts as a hit, but
+ * lower than 1.0 so the dashboard still flags the modifier difference.
+ */
+const SUBSET_SCORE = 0.85;
+
+/**
+ * "Subset match": one normalized token set is a strict, non-empty subset of
+ * the other. Captures cases where the model dropped or added a single
+ * clinical modifier ("chronic", "acute", "viral"). Empty intersections
+ * (e.g. "diabetes" vs "asthma") never trigger this.
+ */
+function isTokenSubset(a: string, b: string): boolean {
+  const ta = new Set(tokens(a));
+  const tb = new Set(tokens(b));
+  if (ta.size === 0 || tb.size === 0) return false;
+  if (ta.size === tb.size) return false; // not a strict subset
+  const [smaller, bigger] = ta.size < tb.size ? [ta, tb] : [tb, ta];
+  for (const t of smaller) if (!bigger.has(t)) return false;
+  return true;
+}
 
 export interface DiagnosisScore {
   precision: number;
@@ -54,7 +78,15 @@ export function scoreDiagnoses(
   const candidates: Array<{ pi: number; gi: number; score: number; icd: boolean | null }> = [];
   for (let pi = 0; pi < pred.length; pi++) {
     for (let gi = 0; gi < gold.length; gi++) {
-      const score = tokenSetRatio(pred[pi]!.description, gold[gi]!.description);
+      const pDesc = pred[pi]!.description;
+      const gDesc = gold[gi]!.description;
+      let score = tokenSetRatio(pDesc, gDesc);
+      // Subset match: one side fully contained in the other on tokens.
+      // Lifts pairs like ("constipation", "chronic constipation") above the
+      // threshold without changing strict-mismatch behavior.
+      if (score < DESC_THRESHOLD && isTokenSubset(pDesc, gDesc)) {
+        score = SUBSET_SCORE;
+      }
       if (score < DESC_THRESHOLD) continue;
       const pIcd = pred[pi]!.icd10 ?? null;
       const gIcd = gold[gi]!.icd10 ?? null;

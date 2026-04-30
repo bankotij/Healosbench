@@ -18,6 +18,40 @@ import { normalize, tokenSetRatio } from "./text";
 
 const NAME_THRESHOLD = 0.8;
 
+/**
+ * Containment match for dose / frequency strings. The model frequently
+ * produces a *more specific* version of the gold (e.g. gold "17 grams",
+ * pred "17 grams in 8 ounces of water"; gold "once daily", pred "once daily
+ * for two weeks, then wean"). Counting these as outright mismatches is
+ * wrong — the model got the dose / cadence right, just added admin detail.
+ *
+ * `dosesEquivalent` and `frequenciesEquivalent` accept either side being a
+ * non-trivial prefix of the other after normalization. We require a length
+ * floor of 3 so we don't accidentally match "1g" inside "1g formulation
+ * with 100mg of …".
+ */
+function isPrefixContainment(short: string, long: string): boolean {
+  if (short.length < 3) return false;
+  if (short === long) return true;
+  return long.startsWith(`${short} `) || long.startsWith(`${short},`);
+}
+
+function dosesEquivalent(p: string | null, g: string | null): boolean {
+  const pn = normalizeDose(p);
+  const gn = normalizeDose(g);
+  if (pn === gn) return true;
+  if (pn === null || gn === null) return false;
+  return isPrefixContainment(pn, gn) || isPrefixContainment(gn, pn);
+}
+
+function frequenciesEquivalent(p: string | null, g: string | null): boolean {
+  const pn = normalizeFrequency(p);
+  const gn = normalizeFrequency(g);
+  if (pn === gn) return true;
+  if (pn === null || gn === null) return false;
+  return isPrefixContainment(pn, gn) || isPrefixContainment(gn, pn);
+}
+
 export interface MedSetScore {
   precision: number;
   recall: number;
@@ -66,9 +100,8 @@ export function scoreMedications(
       const p = pred[pi]!;
       const g = gold[gi]!;
       const name = tokenSetRatio(p.name, g.name);
-      const dose = normalizeDose(p.dose) === normalizeDose(g.dose);
-      const frequency =
-        normalizeFrequency(p.frequency) === normalizeFrequency(g.frequency);
+      const dose = dosesEquivalent(p.dose, g.dose);
+      const frequency = frequenciesEquivalent(p.frequency, g.frequency);
       const route = normalizeRoute(p.route) === normalizeRoute(g.route);
       if (name >= NAME_THRESHOLD && dose && frequency) {
         candidates.push({ pi, gi, name, dose, frequency, route });
@@ -112,11 +145,40 @@ export function scoreMedications(
 
 // ---------- normalization helpers ------------------------------------------
 
-const DOSE_RE = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|cc|units?|iu|drops?|puffs?|tablets?|capsules?)\b/iu;
+// Order matters: longer / more specific aliases first so "grams" doesn't get
+// chopped to "g" by the engine. The trailing \b enforces a word boundary so
+// "g" doesn't match inside "grams".
+const DOSE_RE =
+  /(\d+(?:\.\d+)?)\s*(milligrams?|micrograms?|kilograms?|tablespoons?|teaspoons?|tablets?|capsules?|patches|sprays?|grams?|liters?|drops?|puffs?|ounces?|tbsp|tsp|units?|mcg|mg|kg|gm|ml|cc|iu|oz|l|g)\b/iu;
+
+// Map of recognized aliases → canonical short unit. Keeps `normalizeDose`
+// output stable: "17 grams" / "17 g" / "17g" all canonicalize to "17g";
+// "1 tablespoon" / "1 tbsp" / "1tbsp" all canonicalize to "1tbsp".
+const UNIT_ALIASES: Record<string, string> = {
+  milligram: "mg", milligrams: "mg", mg: "mg",
+  microgram: "mcg", micrograms: "mcg", mcg: "mcg",
+  kilogram: "kg", kilograms: "kg", kg: "kg",
+  gram: "g", grams: "g", gm: "g", g: "g",
+  liter: "l", liters: "l", l: "l",
+  ml: "ml", cc: "cc",
+  tablespoon: "tbsp", tablespoons: "tbsp", tbsp: "tbsp",
+  teaspoon: "tsp", teaspoons: "tsp", tsp: "tsp",
+  ounce: "oz", ounces: "oz", oz: "oz",
+  tablet: "tablet", tablets: "tablet",
+  capsule: "capsule", capsules: "capsule",
+  patch: "patch", patches: "patch",
+  spray: "spray", sprays: "spray",
+  drop: "drop", drops: "drop",
+  puff: "puff", puffs: "puff",
+  unit: "unit", units: "unit",
+  iu: "iu",
+};
 
 /**
  * Canonical form for dose strings.
  *  - "10 mg" / "10mg" / "10  mg" → "10mg"
+ *  - "17 grams" / "17 g" / "17gm" → "17g"
+ *  - "one tablespoon" / "1 tbsp" → "1tbsp" (when a number is present)
  *  - "0.5 mg" → "500mcg" (mg → mcg conversion when the result is integer-ish)
  *  - returns null when the input is null or unparseable. Two unparseable
  *    doses are equal iff they are identical (after lowercase + whitespace
@@ -124,21 +186,25 @@ const DOSE_RE = /(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|cc|units?|iu|drops?|puffs?|table
  */
 export function normalizeDose(input: string | null): string | null {
   if (input === null) return null;
-  const trimmed = input.trim().toLowerCase();
+  let trimmed = input.trim().toLowerCase();
   if (!trimmed) return null;
+  // Spell out a few common word-numbers so "one tablespoon" parses.
+  trimmed = trimmed
+    .replace(/\bone\b/g, "1")
+    .replace(/\btwo\b/g, "2")
+    .replace(/\bthree\b/g, "3")
+    .replace(/\bfour\b/g, "4")
+    .replace(/\bhalf\b/g, "0.5");
   const m = DOSE_RE.exec(trimmed);
   if (!m) return trimmed.replace(/\s+/g, " ");
   const value = Number.parseFloat(m[1]!);
-  let unit = m[2]!.toLowerCase();
-  // Singularize a couple of variants.
-  unit = unit.replace(/^units$/, "unit").replace(/s$/, (s) => (unit === "drops" || unit === "puffs" || unit === "tablets" || unit === "capsules" ? s : ""));
+  const rawUnit = m[2]!.toLowerCase();
+  const unit = UNIT_ALIASES[rawUnit] ?? rawUnit;
   // mg ↔ mcg conversion when it produces clean numbers.
   if (unit === "mg" && value < 1 && Number.isInteger(value * 1000)) {
     return `${value * 1000}mcg`;
   }
-  // Drop trailing .0 from "10.0" → "10".
-  const valueStr = Number.isInteger(value) ? String(value) : String(value);
-  return `${valueStr}${unit}`;
+  return `${Number.isInteger(value) ? String(value) : String(value)}${unit}`;
 }
 
 const FREQUENCY_CANONICAL: Array<{ patterns: RegExp[]; canonical: string }> = [
@@ -183,17 +249,27 @@ const FREQUENCY_CANONICAL: Array<{ patterns: RegExp[]; canonical: string }> = [
 /**
  * Canonical form for frequency strings. Combines a base cadence (e.g.
  * "every 6 hours") with optional "as needed" qualifier.
+ *
+ * When the input lists *multiple* cadences (e.g. "once daily to start, can
+ * increase to twice daily if needed"), we use the cadence whose pattern
+ * occurs earliest in the input — that's the *primary* dosing intent. The
+ * older "first-pattern-listed-in-config wins" behavior accidentally picked
+ * the wrong cadence on contingent multi-cadence strings.
  */
 export function normalizeFrequency(input: string | null): string | null {
   if (input === null) return null;
   const lc = normalize(input);
   if (!lc) return null;
   let cadence: string | null = null;
+  let cadenceIndex = Number.POSITIVE_INFINITY;
   for (const entry of FREQUENCY_CANONICAL) {
     if (entry.canonical === "as needed") continue;
-    if (entry.patterns.some((p) => p.test(lc))) {
-      cadence = entry.canonical;
-      break;
+    for (const p of entry.patterns) {
+      const m = p.exec(lc);
+      if (m && m.index < cadenceIndex) {
+        cadence = entry.canonical;
+        cadenceIndex = m.index;
+      }
     }
   }
   const prn = FREQUENCY_CANONICAL.find((e) => e.canonical === "as needed")!;

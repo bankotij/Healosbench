@@ -26,6 +26,29 @@ describe("scoreDiagnoses() — set-F1 with optional ICD bonus", () => {
     expect(r.f1).toBe(1);
   });
 
+  test("subset match: pred description is a strict subset of gold's tokens (lost modifier)", () => {
+    // Real case_011: gold "chronic constipation", pred "constipation".
+    // Used to score 0.0 (Jaccard 0.5, below 0.7 threshold). Now gets credit
+    // because pred's tokens are a strict subset of gold's. The dashboard
+    // still surfaces the lower desc_score so the modifier loss is visible.
+    const r = scoreDiagnoses([dx("constipation")], [dx("chronic constipation")]);
+    expect(r.f1).toBe(1);
+    expect(r.matches[0]!.desc_score).toBe(0.85);
+  });
+
+  test("subset match: pred description ADDS a modifier the gold didn't have", () => {
+    // Symmetric — model added "acute". Same reasoning.
+    const r = scoreDiagnoses([dx("acute pharyngitis")], [dx("pharyngitis")]);
+    expect(r.f1).toBe(1);
+    expect(r.matches[0]!.desc_score).toBe(0.85);
+  });
+
+  test("subset match does NOT trigger when token sets are equal-size and disagree", () => {
+    // "diabetes" vs "asthma" — different conditions, must not match.
+    const r = scoreDiagnoses([dx("asthma")], [dx("diabetes")]);
+    expect(r.f1).toBe(0);
+  });
+
   test("ICD bonus rewards a correct code on top of a description match", () => {
     const r = scoreDiagnoses(
       [dx("essential hypertension", "I10")],

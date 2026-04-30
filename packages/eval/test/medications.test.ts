@@ -30,6 +30,20 @@ describe("normalizeDose()", () => {
     expect(normalizeDose("low dose")).toBe("low dose");
     expect(normalizeDose(null)).toBeNull();
   });
+
+  test("recognizes 'grams' / 'gram' / 'gm' as canonical 'g'", () => {
+    // Regression for case_011: "17 grams" used to fall through to opaque
+    // string compare because the regex's `g\b` didn't match inside "grams".
+    expect(normalizeDose("17 grams")).toBe("17g");
+    expect(normalizeDose("17 gram")).toBe("17g");
+    expect(normalizeDose("17gm")).toBe("17g");
+  });
+
+  test("recognizes spoon / ounce / liter units when a number is present", () => {
+    expect(normalizeDose("one tablespoon")).toBe("1tbsp");
+    expect(normalizeDose("1 tsp")).toBe("1tsp");
+    expect(normalizeDose("8 ounces")).toBe("8oz");
+  });
 });
 
 describe("normalizeFrequency()", () => {
@@ -48,6 +62,17 @@ describe("normalizeFrequency()", () => {
   test("PRN alone canonicalizes to 'as needed'", () => {
     expect(normalizeFrequency("PRN")).toBe("as needed");
     expect(normalizeFrequency("when needed")).toBe("as needed");
+  });
+
+  test("multi-cadence string picks the EARLIEST-occurring cadence (primary intent)", () => {
+    // Regression for case_011: this used to pick "twice daily" → every 12h
+    // because that pattern is checked before "once daily" in the config.
+    expect(
+      normalizeFrequency("once daily to start, can increase to twice daily if needed"),
+    ).toBe("once daily");
+    expect(normalizeFrequency("twice daily for one week, then once daily")).toBe(
+      "every 12 hours",
+    );
   });
 });
 
@@ -117,5 +142,32 @@ describe("scoreMedications() — set-F1 with fuzzy name + canonical dose/freq", 
   test("both empty arrays → perfect F1 (correct abstention)", () => {
     const r = scoreMedications([], []);
     expect(r.f1).toBe(1);
+  });
+
+  // ---- Containment matching --------------------------------------------------
+
+  test("dose containment: gold short form is a prefix of pred's verbose form", () => {
+    // Real case_011 polyethylene glycol: gold says the dose, pred elaborates
+    // on the admin instructions ("17 grams in 8 ounces of water").
+    const pred = [med("polyethylene glycol", "17 grams in 8 ounces of water", "once daily")];
+    const gold = [med("polyethylene glycol", "17 grams", "once daily")];
+    expect(scoreMedications(pred, gold).f1).toBe(1);
+  });
+
+  test("frequency containment: gold cadence is a prefix of pred's verbose form", () => {
+    // Real case_011 polyethylene glycol frequency: pred says
+    // "once daily for two weeks, then wean", gold says "once daily".
+    const pred = [med("polyethylene glycol", "17g", "once daily for two weeks, then wean")];
+    const gold = [med("polyethylene glycol", "17g", "once daily")];
+    expect(scoreMedications(pred, gold).f1).toBe(1);
+  });
+
+  test("containment doesn't match unrelated doses ('1g' should not match '1g of 100mg formulation')", () => {
+    // Sanity: containment must be a *prefix* + boundary, not a substring
+    // search. "1g" matching inside "10g" or "1mg matching inside 100mg" would
+    // be a false positive.
+    const pred = [med("foo", "10g", "once daily")];
+    const gold = [med("foo", "1g", "once daily")];
+    expect(scoreMedications(pred, gold).f1).toBe(0);
   });
 });
