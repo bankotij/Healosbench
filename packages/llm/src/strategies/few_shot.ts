@@ -1,4 +1,4 @@
-import { ROLE, SAFETY_RULES, FORMAT_HINT } from "../prompts/base";
+import { ROLE, SAFETY_RULES, FIELD_GUIDANCE, FORMAT_HINT } from "../prompts/base";
 import { FEW_SHOT_EXAMPLES } from "../prompts/few_shot_examples";
 import { EXTRACT_TOOL, EXTRACT_TOOL_NAME } from "../tool";
 
@@ -12,7 +12,7 @@ export const fewShotStrategy: PromptStrategy = {
   id: "few_shot",
   tool: EXTRACT_TOOL,
   buildSystem() {
-    return [ROLE, SAFETY_RULES, FRAMING, FORMAT_HINT].join("\n\n");
+    return [ROLE, SAFETY_RULES, FIELD_GUIDANCE, FRAMING, FORMAT_HINT].join("\n\n");
   },
   buildPrefixMessages() {
     const messages: PromptMessage[] = [];
