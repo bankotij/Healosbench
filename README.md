@@ -1,3 +1,344 @@
+# HEALOSBENCH
+
+**An eval harness for structured clinical extraction.** Drop in a folder
+of de-identified visit transcripts and gold JSON extractions, pick a
+prompt strategy + model, watch a Next.js dashboard score the model
+case-by-case in real time, and compare runs side-by-side to make a
+defensible "ship this prompt / model" call.
+
+> **Hosting note.** This project is **not** deployed publicly. The
+> original assessment (preserved verbatim in the appendix at the end of this
+> file) explicitly lists **deployment** under what they are not looking
+> for — everything runs locally on `:3001` (web) and `:8787` (server).
+
+---
+
+## Quick start — verify the harness
+
+Submission check: **`bun install && bun run eval -- --strategy=zero_shot`**
+must work from a clean clone (with Postgres up and env configured).
+
+```bash
+docker compose up -d              # Postgres on host :5433 (see docker-compose.yml)
+
+bun install
+bun run db:push                   # apply Drizzle schema
+
+# apps/server/.env — required:
+#   DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/healosbench
+#   ANTHROPIC_API_KEY=sk-ant-…
+
+bun run eval -- --strategy=zero_shot   # full 50-case run; ~$0.16 on Haiku 4.5
+
+# Optional — dashboard
+bun run dev                       # Next.js :3001, Hono :8787
+```
+
+A one-case smoke run (faster, ~$0.008):  
+`bun run eval -- --strategy=zero_shot --filter=case_001 --force`
+
+---
+
+## 90-second tour
+
+<video src="./docs/videos/01-overview.mov" controls width="100%"></video>
+
+> If your markdown renderer doesn't play `.mov` inline, open
+> [`docs/videos/01-overview.mov`](./docs/videos/01-overview.mov)
+> directly.
+
+---
+
+## Quick links
+
+| Doc | What's there |
+|---|---|
+| **`README.md`** *(this file)* | Project overview, dashboard tour, how to run, original assessment appendix |
+| [`NOTES.md`](./NOTES.md) | Methodology, metric correctness pass, results, what surprised us, limitations |
+| [`results/`](./results/) | CLI output for full 50-case runs (zero_shot, few_shot, cot) |
+
+---
+
+## TL;DR
+
+- **Stack:** Bun monorepo · Hono server (`:8787`) · Next.js 16 dashboard (`:3001`) · Postgres via Drizzle · Anthropic SDK
+- **Models:** Claude Haiku 4.5 (default), Sonnet 4.5 (cross-model spot-check)
+- **Strategies:** `zero_shot` · `few_shot` (3 worked examples) · `cot` (chain-of-thought)
+- **Concurrency:** Semaphore(5) + 429/529 backoff with `Retry-After` honored
+- **Resilience:** Resumable runs · idempotent re-posts · retry-with-validation-feedback (cap 3 attempts)
+- **Cost:** Pre-flight estimate · live cost panel in UI · `--max-cost` guardrail (HTTP 412 enforcement)
+- **Streaming:** Server-Sent Events for live dashboard updates
+- **Tests:** 106 pass / 0 fail / 250 expects across 12 files in <1s (`bun run test`)
+- **Headline:** 0.71–0.72 overall on 50 cases for ~$0.16 per strategy. Combined three-strategy spend: $0.53 (well under the $1 budget).
+
+---
+
+## The problem
+
+Given a clinical visit transcript like this:
+
+> *Doctor:* Hi Eleanor, how can I help?
+> *Patient:* I've been so constipated. I might go once every 4 or 5 days, and when I do it's hard and painful…
+
+…produce structured JSON conforming to `data/schema.json`:
+
+```json
+{
+  "chief_complaint": "chronic constipation for a couple months",
+  "vitals": { "bp": null, "hr": null, "temp_f": null, "spo2": null },
+  "medications": [
+    { "name": "psyllium husk", "dose": "one tablespoon",
+      "frequency": "once a day", "route": "PO" }
+  ],
+  "diagnoses": [{ "description": "chronic constipation", "icd10": "K59.00" }],
+  "plan": ["psyllium husk one tablespoon mixed in water once a day, …"],
+  "follow_up": { "interval_days": 28, "reason": "constipation recheck" }
+}
+```
+
+…with a system around it that:
+
+1. Doesn't crash on a malformed tool output (retry with the validator's error)
+2. Doesn't burst-throttle Anthropic (semaphore + backoff)
+3. Doesn't double-charge if you re-post the same run (idempotency)
+4. Doesn't lose progress on crash (resumability)
+5. Doesn't surprise you with a $40 bill (pre-flight cost estimate + cap)
+6. Tells you *which fields* are getting worse when you tweak a prompt (compare view)
+7. Surfaces *which cases* disagree most across runs so you know where to look (active learning)
+
+The harness handles all seven.
+
+---
+
+## Tour of the dashboard
+
+### 1. Home
+
+![Home](./docs/screenshots/01-home.png)
+
+Four navigation cards — **Runs**, **Compare**, **Disagreements**,
+**Prompts**. Every other view is one click away.
+
+### 2. Runs list + new-run form
+
+![Runs list](./docs/screenshots/02-run-list.png)
+
+The new-run form sits at the top: strategy picker, optional case filter
+(`case_001,case_002,…`), optional cost cap, force-rerun checkbox, and a
+**live cost estimate** that updates as you change strategy. Below it,
+every past run with strategy, model, prompt-hash chip, per-field score
+bars, hallucination count, cost, and status badge.
+
+### 3. Cost estimate (close-up)
+
+![Cost estimate](./docs/screenshots/03-cost-estimate.png)
+
+Pre-flight estimate with cached vs uncached split. The "no cache: $X —
+saving $Y via prompt cache" line is the prompt-caching ROI made
+explicit. If you set a `Max cost (USD)` and the projection blows it,
+the run is rejected with HTTP 412 *before* a single token is sent — the
+cost guardrail stretch goal.
+
+### 4. Run detail
+
+![Run detail](./docs/screenshots/04-run-detail.png)
+
+Summary card up top (overall + per-field bars + hallucination count +
+cost + wall + tokens) and a per-case table below it. If the run is
+still going, an SSE indicator pulses and rows fill in live as cases
+finish.
+
+### 5. Case detail — extraction diff + LLM trace + grounded transcript
+
+![Case detail](./docs/screenshots/05-case-detail.png)
+
+- **Transcript grounding highlights** — `findGroundingSpans()` in
+  `packages/eval/src/grounding.ts` pre-computes ranges server-side.
+  **`TranscriptHighlight`** renders **exact** substring matches as a solid
+  emerald fill and **partial** content-token hits as a dashed underline;
+  each span has a tooltip naming the backing prediction field(s). Policy
+  matches the hallucination detector (e.g. skips diagnosis descriptions,
+  skips medication frequency/route).
+- **Extraction diff** — gold vs prediction side-by-side, per-field scores.
+- **Attempt trace** — every LLM round-trip including retries, validation errors
+  routed back into the model, token usage incl. cache read/write.
+
+### 6. Compare view
+
+![Compare](./docs/screenshots/06-compare.png)
+
+Pick run A, pick run B. Per-field score deltas with a winner column,
+per-case deltas sortable by spread.
+
+### 7. Disagreements (active-learning hint)
+
+![Disagreements](./docs/screenshots/07-disagreements.png)
+
+Top-N cases by score *spread* across runs of different prompts.
+
+### 8. Prompts list
+
+![Prompts list](./docs/screenshots/08-prompts-list.png)
+
+Every distinct prompt content-hash materialized by the harness.
+
+### 9. Prompt detail
+
+![Prompt detail](./docs/screenshots/09-prompt-detail.png)
+
+Full system prompt + tool schema + runs that used this hash.
+
+### 10. Prompt diff (with regression cases)
+
+![Prompt diff](./docs/screenshots/10-prompt-diff.png)
+
+Side-by-side LCS line diff + per-case regression list — **stretch goal**.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────┐         ┌──────────────────────┐
+│ apps/web (Next.js 16, :3001)│  fetch  │ apps/server (Hono,   │
+│  /, /runs, /runs/:id, …     │ ──────► │  :8787)              │
+└─────────────────────────────┘  + SSE  │  REST + SSE          │
+                                        └──────────┬───────────┘
+                                                   │
+                  ┌────────────────────────────────┼──────────────┐
+                  │                                │              │
+        services/runner.service.ts       services/extract.svc   db/
+          • createRun / startRun          • wraps packages/llm  drizzle
+          • SSE pub/sub                   • injects api key &     │
+          • semaphore (5)                   default model        Postgres
+          • idempotency lookup                                   (schema:
+          • resumability filter                                   prompts,
+                                                                  runs,
+                                                                  cases,
+                                                                  attempts)
+        services/evaluate.service.ts     packages/llm/
+          • per-field metrics              • client.ts (cache_control)
+          • hallucination check            • rate_limiter.ts (semaphore + 429 backoff)
+                                           • extract.ts (retry-with-feedback)
+                                           • strategies/{zero_shot,few_shot,cot}
+                                           • estimate.ts (pre-flight cost)
+                                           • hash.ts (canonical sha256)
+```
+
+| Package | Role |
+|---|---|
+| `packages/llm` | Tool schema, strategies, retry-with-feedback, caching, semaphore + backoff, cost estimator |
+| `packages/eval` | Per-field metrics, hallucination detector, grounding span builder for transcript UI |
+| `packages/shared` | Zod-backed types, run/case/attempt DTOs, SSE event union |
+
+---
+
+## Tech stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Runtime | Bun | Assignment + fast harness |
+| Monorepo | Bun workspaces + Turborepo | Minimal config |
+| Database | Postgres + Drizzle | Schema as code |
+| Server | Hono | Tiny · SSE-native on Bun |
+| Frontend | Next.js 16 App Router | Starter-aligned |
+| LLM | Anthropic SDK + enforced tool_use | Required |
+| Type-check | `bun run check-types` | Turbo wraps `tsc --noEmit` |
+| Tests | `bun run test` | 106 tests |
+
+---
+
+## The CLI
+
+```bash
+bun run eval -- --strategy=zero_shot
+
+bun run eval -- --strategy=cot \
+                --filter=case_001,case_002,case_003 \
+                --max-cost=0.05
+
+bun run eval -- --strategy=few_shot --estimate
+
+bun run eval -- --strategy=zero_shot --model=claude-sonnet-4-5-20250929
+
+bun run eval -- --strategy=zero_shot --force
+```
+
+---
+
+## Metrics at a glance
+
+| Field | Metric |
+|---|---|
+| `chief_complaint` | `tokenSetRatio` |
+| `vitals.*` | Exact ± `temp_f` tolerance |
+| `medications` | Set-F1; dose/frequency canonical + prefix containment |
+| `diagnoses` | Set-F1 fuzzy + subset escape hatch + small ICD bonus |
+| `plan` | Set-F1 fuzzy 0.65 |
+| `follow_up` | Exact `interval_days` + fuzzy `reason` |
+
+Full methodology → [`NOTES.md`](./NOTES.md#evaluation-methodology).
+
+---
+
+## Headline results (50 cases, Haiku 4.5)
+
+| Strategy | Overall | Wall | Cost |
+| --- | :-: | --- | --- |
+| zero-shot | **0.716** | ~60s | ~$0.16 |
+| few-shot | 0.715 | ~94s | ~$0.17 |
+| cot | 0.712 | ~65s | ~$0.20 |
+
+5-case Haiku vs Sonnet (zero-shot): Haiku ~0.70 · Sonnet ~0.80 — detail in NOTES.
+
+---
+
+## Stretch goals shipped
+
+All items from the **original assessment** stretch section are implemented:
+
+| # | Stretch | Where |
+|---|---|---|
+| 1 | Prompt diff | `/prompts/diff` |
+| 2 | Active-learning / disagreements | `/disagreements` |
+| 3 | Cost guardrail | `estimateCost()` + `--max-cost` + HTTP 412 |
+| 4 | Second model | Sonnet 4.5 5-case + compare |
+
+---
+
+## What's covered by tests
+
+`bun run test` → **106 pass / 0 fail / 250 expects** · 12 files  
+(incl. grounding spans, hallucination, medications, runner idempotency / resume mocks, extract retry, rate limiter).
+
+---
+
+## Project layout
+
+```
+healosbench/
+├── README.md                 ← You are here
+├── NOTES.md
+├── apps/server/ apps/web/
+├── packages/{llm,eval,shared,db,env,…}
+├── data/                     transcripts + gold + schema.json (do not modify gold/schema)
+├── results/                  saved CLI summaries
+└── docs/screenshots docs/videos
+```
+
+---
+
+## Documentation map
+
+- **`README.md`** — onboarding, dashboard tour, quick start.
+- **`NOTES.md`** — deep methodology, metric fixes, empirical results.
+
+---
+
+---
+
+## Appendix: Original HEALOSBENCH assessment specification
+
 # HEALOSBENCH — Eval Harness for Structured Clinical Extraction
 
 > **Take-home assessment** · target ~8–12 focused hours · synthetic data only

@@ -7,6 +7,8 @@ view, cross-model run), a metric-correctness pass that fixed three real
 bugs in the medication / diagnosis matchers, and a final spec-audit pass
 that closed the transcript-grounding-highlight gap on the case-detail page.
 
+**Visual tour (screenshots + video):** root [`README.md`](./README.md).
+
 ## TL;DR results (50-case Haiku 4.5, full runs, force=true)
 
 | Strategy   | Overall | chief_complaint | vitals | medications | diagnoses | plan | follow_up | Schema-fail | Hallucinated values | Wall | Cost |
