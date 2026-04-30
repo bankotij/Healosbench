@@ -6,6 +6,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "bun test",
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@test-evals/shared": "workspace:*",
     "zod": "catalog:"

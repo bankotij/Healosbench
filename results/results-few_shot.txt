@@ -1,0 +1,29 @@
+$ bun apps/server/src/cli/eval.ts "--strategy=few_shot" --force
+▸ Strategy: few_shot
+▸ Force: bypassing idempotency cache
+▸ Run ID: dbf7c50d-2f8f-4404-8966-f1510bc2b0cb
+▸ Prompt hash: 07791e5fad16
+▸ Cases: 50
+
+  1  /50  done  · 0  failed  · mean=0.723  · 2.4s     2  /50  done  · 0  failed  · mean=0.793  · 2.4s     3  /50  done  · 0  failed  · mean=0.785  · 2.4s     4  /50  done  · 0  failed  · mean=0.731  · 2.5s     5  /50  done  · 0  failed  · mean=0.707  · 2.6s     6  /50  done  · 0  failed  · mean=0.678  · 4.5s     7  /50  done  · 0  failed  · mean=0.694  · 4.8s     8  /50  done  · 0  failed  · mean=0.714  · 5.0s     9  /50  done  · 0  failed  · mean=0.687  · 5.0s     10 /50  done  · 0  failed  · mean=0.685  · 5.1s     11 /50  done  · 0  failed  · mean=0.671  · 7.2s     12 /50  done  · 0  failed  · mean=0.665  · 7.4s     13 /50  done  · 0  failed  · mean=0.652  · 7.6s     14 /50  done  · 0  failed  · mean=0.647  · 7.7s     15 /50  done  · 0  failed  · mean=0.645  · 8.8s     16 /50  done  · 0  failed  · mean=0.647  · 14.3s     17 /50  done  · 0  failed  · mean=0.654  · 14.6s     18 /50  done  · 0  failed  · mean=0.654  · 14.8s     19 /50  done  · 0  failed  · mean=0.652  · 14.8s     20 /50  done  · 0  failed  · mean=0.660  · 15.1s     21 /50  done  · 0  failed  · mean=0.665  · 25.1s     22 /50  done  · 0  failed  · mean=0.662  · 25.4s     23 /50  done  · 0  failed  · mean=0.666  · 25.8s     24 /50  done  · 0  failed  · mean=0.660  · 25.9s     25 /50  done  · 0  failed  · mean=0.661  · 25.9s     26 /50  done  · 0  failed  · mean=0.662  · 36.1s     27 /50  done  · 0  failed  · mean=0.661  · 36.6s     28 /50  done  · 0  failed  · mean=0.659  · 36.7s     29 /50  done  · 0  failed  · mean=0.664  · 36.7s     30 /50  done  · 0  failed  · mean=0.655  · 36.7s     31 /50  done  · 0  failed  · mean=0.653  · 38.9s     32 /50  done  · 0  failed  · mean=0.654  · 47.6s     33 /50  done  · 0  failed  · mean=0.657  · 48.1s     34 /50  done  · 0  failed  · mean=0.658  · 48.1s     35 /50  done  · 0  failed  · mean=0.662  · 48.1s     36 /50  done  · 0  failed  · mean=0.656  · 48.6s     37 /50  done  · 0  failed  · mean=0.658  · 49.6s     38 /50  done  · 0  failed  · mean=0.657  · 61.2s     39 /50  done  · 0  failed  · mean=0.652  · 61.3s     40 /50  done  · 0  failed  · mean=0.652  · 62.1s     41 /50  done  · 0  failed  · mean=0.653  · 62.1s     42 /50  done  · 0  failed  · mean=0.653  · 62.6s     43 /50  done  · 0  failed  · mean=0.658  · 71.0s     44 /50  done  · 0  failed  · mean=0.660  · 71.3s     45 /50  done  · 0  failed  · mean=0.662  · 71.3s     46 /50  done  · 0  failed  · mean=0.665  · 71.9s     47 /50  done  · 0  failed  · mean=0.664  · 71.9s     48 /50  done  · 0  failed  · mean=0.666  · 81.3s     49 /50  done  · 0  failed  · mean=0.664  · 81.6s     50 /50  done  · 0  failed  · mean=0.660  · 82.0s   
+
+Strategy:      few_shot
+Model:         claude-haiku-4-5-20251001
+Prompt hash:   07791e5fad169592626320f294c58d0b694568349df31114ec190ebe335405fa
+Cases:         50/50 completed (0 failed, 0 schema-invalid, 0 cached)
+Tokens:        15,336 in · 17,513 out · 287,910 cache_read · 31,990 cache_write
+Cost:          $0.1717
+Wall:          82.0s
+Hallucinated:  17 flagged values across 13 cases
+
+Per-field scores:
+  Field               Mean Score  
+  ------------------  ------------
+  chief_complaint     0.4820      
+  vitals              0.9950      
+  medications         0.7004      
+  diagnoses           0.5200      
+  plan                0.5816      
+  follow_up           0.6811      
+
+Overall:       0.6600
