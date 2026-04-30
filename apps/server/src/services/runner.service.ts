@@ -202,7 +202,15 @@ export async function getCaseDetail(runId: string, caseDatasetId: string) {
     where: eq(attempts.case_pk, caseRow.id),
     orderBy: [asc(attempts.attempt_no)],
   });
-  return { case: caseRow, attempts: attemptRows };
+  // The dashboard wants the transcript + gold inline for the diff view.
+  // Loading just the one case is cheap and avoids a second round-trip.
+  const [datasetCase] = await loadDataset({ filter: [caseDatasetId] });
+  return {
+    case: caseRow,
+    attempts: attemptRows,
+    transcript: datasetCase?.transcript ?? null,
+    gold: datasetCase?.gold ?? null,
+  };
 }
 
 // ---------- background processing ------------------------------------------

@@ -114,4 +114,7 @@ app.get("/api/v1/runs/:id/stream", (c) => {
   });
 });
 
-export default app;
+export default {
+  port: env.PORT,
+  fetch: app.fetch,
+};

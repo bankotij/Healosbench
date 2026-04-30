@@ -32,7 +32,7 @@ export const env = createEnv({
     // with just DATABASE_URL + ANTHROPIC_API_KEY in `apps/server/.env`.
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
     BETTER_AUTH_URL: z.url().optional(),
-    CORS_ORIGIN: z.url().default("http://localhost:3000"),
+    CORS_ORIGIN: z.url().default("http://localhost:3001"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
