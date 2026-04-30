@@ -11,6 +11,7 @@ import {
   getCaseDetail,
   getRunCases,
   getRunSummary,
+  listDisagreements,
   listRuns,
   pauseRun,
   startRun,
@@ -74,6 +75,18 @@ app.get("/api/v1/runs/:id/cases/:caseId", async (c) => {
   const detail = await getCaseDetail(c.req.param("id"), c.req.param("caseId"));
   if (!detail) return c.json({ error: "not_found" }, 404);
   return c.json(detail);
+});
+
+app.get("/api/v1/disagreements", async (c) => {
+  const limit = Math.min(50, Math.max(1, Number(c.req.query("limit") ?? 5) || 5));
+  const model = c.req.query("model") ?? null;
+  const strategyRaw = c.req.query("strategy") ?? null;
+  const strategy =
+    strategyRaw === "zero_shot" || strategyRaw === "few_shot" || strategyRaw === "cot"
+      ? strategyRaw
+      : null;
+  const rows = await listDisagreements({ limit, model, strategy });
+  return c.json({ disagreements: rows });
 });
 
 app.post("/api/v1/runs/:id/resume", async (c) => {

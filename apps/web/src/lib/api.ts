@@ -146,6 +146,36 @@ export async function getCaseDetail(
   return (await res.json()) as CaseDetailResponse;
 }
 
+// ---------- disagreements (active-learning hint) ---------------------------
+
+export interface DisagreementContributor {
+  run_id: string;
+  strategy: Strategy;
+  model: string;
+  prompt_hash: string;
+  overall_score: number;
+}
+
+export interface DisagreementRow {
+  case_id: string;
+  spread: number;
+  mean_score: number;
+  contributors: DisagreementContributor[];
+}
+
+export async function listDisagreements(
+  opts: { limit?: number; model?: string; strategy?: Strategy } = {},
+): Promise<DisagreementRow[]> {
+  const url = new URL("/api/v1/disagreements", BASE);
+  if (opts.limit) url.searchParams.set("limit", String(opts.limit));
+  if (opts.model) url.searchParams.set("model", opts.model);
+  if (opts.strategy) url.searchParams.set("strategy", opts.strategy);
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (!res.ok) throw new Error(`listDisagreements: ${res.status}`);
+  const json = (await res.json()) as { disagreements: DisagreementRow[] };
+  return json.disagreements;
+}
+
 // ---------- mutations -------------------------------------------------------
 
 export interface CreateRunResponse {

@@ -630,3 +630,87 @@ async function markCaseFailed(
 
 // `addUsage` is exported indirectly (used by the CLI to aggregate).
 export { addUsage };
+
+// ---------- active-learning: disagreement across runs ----------------------
+//
+// "Surface the cases most worth annotating better" — concretely, the cases
+// where two or more runs disagree most about the right answer. Those are the
+// cases where one prompt found something another missed, or where the gold is
+// ambiguous and the metric is rewarding paraphrase. Either way they're the
+// highest-information cases for a human reviewer.
+
+export interface DisagreementContributor {
+  run_id: string;
+  strategy: Strategy;
+  model: string;
+  prompt_hash: string;
+  overall_score: number;
+}
+
+export interface DisagreementRow {
+  case_id: string;
+  spread: number; // max - min across contributing runs
+  mean_score: number;
+  contributors: DisagreementContributor[];
+}
+
+export async function listDisagreements(opts: {
+  limit?: number;
+  model?: string | null;
+  strategy?: Strategy | null;
+} = {}): Promise<DisagreementRow[]> {
+  const limit = opts.limit ?? 5;
+
+  const filters = [eq(cases.status, "completed")];
+  if (opts.model) filters.push(eq(runs.model, opts.model));
+  if (opts.strategy) filters.push(eq(runs.strategy, opts.strategy));
+
+  const rows = await db()
+    .select({
+      case_id: cases.case_id,
+      overall_score: cases.overall_score,
+      run_id: runs.id,
+      strategy: runs.strategy,
+      model: runs.model,
+      prompt_hash: runs.prompt_hash,
+    })
+    .from(cases)
+    .innerJoin(runs, eq(cases.run_id, runs.id))
+    .where(and(...filters));
+
+  const grouped = new Map<string, DisagreementContributor[]>();
+  for (const r of rows) {
+    if (r.overall_score === null) continue;
+    const score = Number(r.overall_score);
+    // De-dupe identical (run_id) entries (shouldn't happen, defensive).
+    const list = grouped.get(r.case_id) ?? [];
+    list.push({
+      run_id: r.run_id,
+      strategy: r.strategy as Strategy,
+      model: r.model,
+      prompt_hash: r.prompt_hash,
+      overall_score: score,
+    });
+    grouped.set(r.case_id, list);
+  }
+
+  const out: DisagreementRow[] = [];
+  for (const [caseId, contributors] of grouped) {
+    // Need at least two *distinct* prompt_hashes — comparing a run to itself
+    // (same prompt re-run) isn't disagreement, that's just noise / cache hits.
+    const distinctPrompts = new Set(contributors.map((c) => c.prompt_hash));
+    if (distinctPrompts.size < 2) continue;
+    const scores = contributors.map((c) => c.overall_score);
+    const spread = Math.max(...scores) - Math.min(...scores);
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+    out.push({
+      case_id: caseId,
+      spread,
+      mean_score: mean,
+      contributors: contributors.sort((a, b) => b.overall_score - a.overall_score),
+    });
+  }
+
+  out.sort((a, b) => b.spread - a.spread);
+  return out.slice(0, limit);
+}
