@@ -1,31 +1,32 @@
-$ bun apps/server/src/cli/eval.ts "--strategy=zero_shot" "--model=claude-haiku-4-5-20251001" "--filter=case_001,case_002,case_003,case_004,case_005"
+$ bun apps/server/src/cli/eval.ts "--strategy=zero_shot" "--model=claude-haiku-4-5-20251001" "--filter=case_001,case_002,case_003,case_004,case_005" --force
 ▸ Strategy: zero_shot
 ▸ Model: claude-haiku-4-5-20251001
 ▸ Filter: 5 cases
+▸ Force: bypassing idempotency cache
 ▸ Estimate: 5 case(s) · ~1,355+17,572+4,393 in · ~2,200 out · projected $0.0196 (no-cache: $0.0343)
-▸ Run ID: 89d61422-9582-49c5-b1b9-9c16c22d2371
+▸ Run ID: ecbaa138-47d4-4cb9-93d5-9d5578f0c4fa
 ▸ Prompt hash: 223250f441df
 ▸ Cases: 5
 
-  1  /5  done  · 0  failed  · mean=0.555  · 3.1s     2  /5  done  · 0  failed  · mean=0.665  · 3.1s     3  /5  done  · 0  failed  · mean=0.709  · 3.3s     4  /5  done  · 0  failed  · mean=0.697  · 3.8s     5  /5  done  · 0  failed  · mean=0.705  · 3.8s   
+  1  /5  done  · 0  failed  · mean=0.604  · 2.9s     2  /5  done  · 0  failed  · mean=0.733  · 3.2s     3  /5  done  · 0  failed  · mean=0.732  · 3.2s     4  /5  done  · 0  failed  · mean=0.719  · 3.3s     5  /5  done  · 0  failed  · mean=0.702  · 3.4s   
 
 Strategy:      zero_shot
 Model:         claude-haiku-4-5-20251001
 Prompt hash:   223250f441df39a52be7c5e3b7a9b5c00b848643bed8cf277abeda5883b7c9ab
 Cases:         5/5 completed (0 failed, 0 schema-invalid, 0 cached)
-Tokens:        3,497 in · 2,109 out · 0 cache_read · 22,525 cache_write
+Tokens:        3,497 in · 2,110 out · 0 cache_read · 22,525 cache_write
 Cost:          $0.0422
-Wall:          3.8s
+Wall:          3.4s
 Hallucinated:  0 flagged values across 0 cases
 
 Per-field scores:
   Field               Mean Score  
   ------------------  ------------
-  chief_complaint     0.4117      
+  chief_complaint     0.4972      
   vitals              1.0000      
-  medications         0.6333      
-  diagnoses           0.8000      
-  plan                0.6597      
-  follow_up           0.7227      
+  medications         0.7333      
+  diagnoses           0.6000      
+  plan                0.6788      
+  follow_up           0.6998      
 
-Overall:       0.7046
+Overall:       0.7015

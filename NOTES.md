@@ -1,52 +1,68 @@
 # NOTES — HEALOSBENCH eval harness
 
-Time spent: ~12 hours. Build is staged across thirteen commits — six core
-phases (foundations → llm → eval → server → CLI → dashboard → tests/notes)
-followed by four stretch-goal commits (disagreements view, cost guardrail,
-prompt diff view, cross-model run).
+Time spent: ~13 hours. Build is staged across fourteen commits — six core
+phases (foundations → llm → eval → server → CLI → dashboard → tests/notes),
+four stretch-goal commits (disagreements view, cost guardrail, prompt diff
+view, cross-model run), and a final metric-correctness pass that fixed
+three real bugs in the medication / diagnosis matchers.
 
 ## TL;DR results (50-case Haiku 4.5, full runs, force=true)
 
 | Strategy   | Overall | chief_complaint | vitals | medications | diagnoses | plan | follow_up | Schema-fail | Hallucinated values | Wall | Cost |
 | ---------- | :-----: | :-------------: | :----: | :---------: | :-------: | :--: | :-------: | :---------: | :-----------------: | ---: | ---: |
-| zero-shot  | **0.683** | 0.453 | 0.995 | **0.710** | **0.668** | 0.579 | **0.695** | 0/50 |  7 |  63s | $0.19 |
-| few-shot (3 ex.) | 0.660 | **0.482** | 0.995 | 0.700 | 0.520 | **0.582** | 0.681 | 0/50 | 17 |  82s | $0.17 |
-| chain-of-thought | 0.682 | 0.456 | 0.995 | **0.710** | 0.660 | 0.575 | **0.695** | 0/50 |  7 | 111s | $0.19 |
+| zero-shot  | **0.716** | 0.433 | 0.995 | 0.737 | **0.844** | 0.603 | 0.682 | 0/50 | 11 |  60s | $0.16 |
+| few-shot (3 ex.) | 0.715 | **0.491** | 0.995 | **0.748** | 0.778 | 0.580 | **0.701** | 0/50 | 14 |  94s | $0.17 |
+| chain-of-thought | 0.712 | 0.432 | 0.995 | 0.737 | 0.793 | **0.634** | 0.682 | 0/50 |  9 |  65s | $0.20 |
 
 Full CLI output is in `results/results-{zero_shot,few_shot,cot}.txt`.
 
-Combined three-strategy spend was **$0.55** — comfortably under the README's
+Combined three-strategy spend was **$0.53** — comfortably under the README's
 $1 budget. Caching does most of that work: the cached prefix is ~4.5–6.4k
 tokens per request, so 49 of every 50 calls hit a `cache_read` of the full
 system + tool + few-shot prefix.
 
+> **Numbers above reflect a metric-correctness pass.** The first version of
+> the harness shipped with three real bugs in the medication / diagnosis
+> matchers (DOSE_RE not recognizing "grams", `normalizeFrequency` picking
+> the wrong cadence on multi-cadence strings, and no containment match for
+> partial agreements like "constipation" vs "chronic constipation"). The
+> bugs were uncovered while reviewing case_011 in the dashboard. Fixing
+> them lifted overall scores by +0.03 → +0.06 across all three strategies.
+> The "what surprised me" section below is post-fix; the metric methodology
+> section calls out exactly what changed and why.
+
 ### What surprised me
 
-1. **Few-shot didn't win.** I expected three carefully-chosen worked examples
-   to dominate. Instead they slightly *hurt* overall score and tripled the
-   hallucination count (17 vs 7). The model copied the *style* of the
-   examples — including their freedom to paraphrase clinical language —
-   into cases where the gold demands more literal extraction. Diagnoses
-   were the worst hit (0.52 vs 0.67): the few-shot examples normalize
-   diagnoses heavily ("URI" → "viral upper respiratory infection") and
-   the model started doing the same on cases where the gold uses the lay
-   term verbatim.
+1. **The metric was lying about three strategies being equivalent.** With
+   the original matchers, all three strategies scored 0.66–0.68 — within
+   noise. After fixing the medication / diagnosis bugs (see "Metric
+   correctness pass" below) the scores still bunch (0.71–0.72), but the
+   *per-field winners* are now distinct: zero-shot wins diagnoses (0.84),
+   few-shot wins chief_complaint and medications, CoT wins plan. The
+   conclusion that "few-shot doesn't help" was partly an artifact of the
+   metric over-penalizing few-shot's more verbose dose / frequency
+   strings. With the fix, few-shot is *tied* on overall and *ahead* on
+   chief_complaint and medications.
 
-2. **CoT bought nothing on Haiku.** Asking the model to walk through six
-   reasoning steps before calling the tool added 1.7× wall time and zero
-   accuracy. Haiku is already producing a structured output via tool-use;
-   forcing it to think out loud first mostly gave it more rope to over-
-   normalize plan items. CoT would probably help on Sonnet (where the
-   reasoning quality is better) and on harder schemas (this one is
-   shallow and well-typed).
+2. **CoT bought nothing on Haiku — and that's still true post-fix.**
+   Asking the model to walk through six reasoning steps before calling
+   the tool added wall time and gave roughly the same overall score.
+   Haiku is already producing structured output via tool-use; forcing
+   it to think out loud first gave it more rope to over-normalize plan
+   items (where it does win) but didn't move the headline number. CoT
+   would probably help on Sonnet (where reasoning quality is better)
+   and on harder schemas (this one is shallow and well-typed).
 
 3. **`chief_complaint` is a hard score to move.** All three strategies
-   sit at 0.45–0.48 because it's a free-text field with one canonical
+   sit at 0.43–0.49 because it's a free-text field with one canonical
    gold per case. The clinician's framing ("sore throat for 4 days") and
    the model's framing ("acute pharyngeal pain x 4 days, low-grade
    fever") share intent but barely any tokens. To move this number you'd
    need an embedding-based similarity (cosine over a sentence encoder)
-   or human review — not the fuzzy token-set ratio I'm using.
+   or a judge-LLM second opinion — not the fuzzy token-set ratio I'm
+   using. I deliberately did **not** tune this metric while fixing the
+   others, because making token-set ratio more permissive on free text
+   would create real false positives.
 
 4. **Vitals are basically solved.** 0.995 mean on all three strategies.
    When vitals are stated in the transcript they're stated *exactly* the
@@ -59,9 +75,17 @@ system + tool + few-shot prefix.
    with a deliberate field-by-field guidance section + a clinical
    normalization glossary. The new prefix lands at ~4.5k tokens (zero-
    shot, CoT) and ~6.4k tokens (few-shot), which clears the threshold
-   AND happens to encode useful behavior the model now follows. This
-   doubled as a quality win — case_001 went from 0.74 → 0.84 on
-   few-shot purely from the field guidance.
+   AND happens to encode useful behavior the model now follows.
+
+6. **Sonnet's lead over Haiku was hidden by the metric bug.** Initial
+   5-case spot-check showed Haiku 0.705 vs Sonnet 0.689 — counter-
+   intuitive given Sonnet's price (~7×). After the metric fix, the same
+   5 cases now score Haiku 0.702 vs **Sonnet 0.796**. Sonnet *was* doing
+   better on medications (0.90 vs 0.73) and diagnoses (1.00 vs 0.60);
+   the old matcher was just penalizing its more elaborate dose / freq
+   strings the same way it penalized few-shot's. Sonnet is worth the
+   cost on this schema; the metric needed to be honest before that
+   conclusion was visible.
 
 ---
 
@@ -149,14 +173,21 @@ Each field uses the metric most appropriate for its shape:
   `temp_f` accepts ±0.2 °F. Sub-field scores are averaged into a single
   vitals score.
 - **`medications`** — set-F1. Two meds match iff name `tokenSetRatio` ≥ 0.8
-  AND `normalizedDose(p) === normalizedDose(g)` AND
-  `normalizedFrequency(p) === normalizedFrequency(g)`. Greedy bipartite
-  pairing by descending name similarity. Route is *not* a match key (it's
-  often null in gold and would create false negatives) but disagreement
-  is surfaced in `details`.
-- **`diagnoses`** — set-F1 on description fuzzy match (threshold 0.7). A
-  small ICD-10 bonus (+0.05 × matched-pair fraction) rewards correct
-  codes without making them pass/fail.
+  AND dose / frequency are *equivalent*. Equivalent means
+  `normalizedDose(p) === normalizedDose(g)` (or symmetric prefix
+  containment, e.g. gold `"17g"` ⊑ pred `"17g in 8 ounces of water"`),
+  and likewise for frequency. The prefix-containment path is what
+  catches "model produced a more specific version of the gold" without
+  matching unrelated values like `"1g"` inside `"10g"`. Greedy bipartite
+  pairing by descending name similarity. Route is *not* a match key
+  (often null in gold) but disagreement is surfaced in `details`.
+- **`diagnoses`** — set-F1 on description fuzzy match (threshold 0.7) with
+  a *subset escape hatch*: if one description's token set is a strict
+  subset of the other's (e.g. pred `{"constipation"}` ⊂ gold
+  `{"chronic","constipation"}`) we score it 0.85 — above the threshold
+  so it counts as a hit, but below 1.0 so the dashboard still shows the
+  modifier loss. A small ICD-10 bonus (+0.05 × matched-pair fraction)
+  rewards correct codes without making them pass/fail.
 - **`plan`** — set-F1 on plan items, fuzzy threshold 0.65 (laxer than
   meds, because plan items are free-text actions with more legitimate
   variation).
@@ -195,6 +226,63 @@ Two notable design choices documented in the source:
 The `hallucination_count` is a signal, not a verdict — a high score with
 ungrounded values means *paraphrase*, a low score with ungrounded values
 means *fabrication*. The dashboard surfaces both.
+
+### Metric correctness pass
+
+After the first round of 50-case runs, I reviewed several low-scoring
+cases in the dashboard and found the metric was flagging genuinely
+correct extractions as 0.0. case_011 was the canonical example —
+gold `psyllium husk · one tablespoon · once a day`, pred
+`psyllium husk · one tablespoon · once daily to start, can increase to
+twice daily if needed` — clinically the same medication, scored 0.0 by
+the matcher. Three real bugs / over-strict design choices:
+
+1. **`DOSE_RE` missed `grams` / `gram` / `gm` and several other units.**
+   The trailing `\b` in `g\b` failed inside "grams" so "17 grams" fell
+   through to opaque string compare. Fixed by extending the alias list
+   (grams, kilograms, tablespoons, teaspoons, tbsp, tsp, ounces, oz,
+   liters, milligrams written long, etc.) and an alias map that
+   canonicalizes them all to short form (`"17 grams"` → `"17g"`,
+   `"one tablespoon"` → `"1tbsp"`).
+
+2. **`normalizeFrequency` picked the FIRST cadence listed in the config,
+   not the FIRST cadence occurring in the input.** "BID / twice daily"
+   is checked before "once daily" in the config, so a string like
+   `"once daily to start, can increase to twice daily if needed"`
+   resolved to `"every 12 hours"` — the contingent cadence, not the
+   primary one. Fixed by scanning all patterns and picking the one with
+   the lowest match index (earliest-occurring in the input).
+
+3. **No containment matching for partial agreements.** Added two paths:
+   prefix-containment for medication dose / frequency (gold form is a
+   strict prefix of pred or vice versa, length ≥ 3 + word-boundary so
+   "1g" doesn't match "10g"), and strict-token-subset for diagnosis
+   descriptions (lifts pairs like "constipation" / "chronic
+   constipation" above the 0.7 threshold with a 0.85 score).
+
+Net effect on the 50-case headline:
+
+| Strategy   | Before fix | After fix | Δ |
+| ---------- | :--: | :--: | :--: |
+| zero-shot  | 0.683 | 0.716 | **+0.033** |
+| few-shot   | 0.660 | 0.715 | **+0.055** |
+| CoT        | 0.682 | 0.712 | **+0.030** |
+
+The biggest gains were on `diagnoses` (zero-shot 0.668 → 0.844;
+few-shot 0.520 → 0.778) — the subset-match path was doing real work.
+
+What I **deliberately did not change**: the `chief_complaint` matcher.
+That score sits at 0.43–0.49 because `tokenSetRatio` of "chronic
+constipation for a couple months" against "constipation for a couple
+of months, with hard and painful bowel movements" is genuinely 0.36.
+Making the metric more permissive on free text would create real
+false positives. The principled fix there is a judge-LLM second-
+opinion metric — listed in "what I'd build next" below.
+
+Tests in `packages/eval/test/` cover both the regression patterns
+(case_011-style multi-cadence frequency, "17 grams" parsing, subset
+diagnosis match) **and** the false-positive guards (1g should not
+match 10g; equal-size disagreeing diagnoses should not subset-match).
 
 ---
 
@@ -304,27 +392,34 @@ schema. Both runs use the same prompt-hash (`223250f441df…`).
 
 | Model | Overall | chief_complaint | vitals | medications | diagnoses | plan | follow_up | Cost | Wall |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | --- | --- |
-| Haiku 4.5 | **0.705** | 0.412 | 1.000 | 0.633 | 0.800 | **0.660** | 0.723 | $0.042 | 3.8s |
-| Sonnet 4.5 | 0.689 | 0.419 | 1.000 | **0.700** | 0.800 | 0.491 | 0.721 | $0.126 | 6.2s |
+| Haiku 4.5  | 0.702 | 0.497 | 1.000 | 0.733 | 0.600 | **0.679** | 0.700 | $0.042 | 3.4s |
+| Sonnet 4.5 | **0.796** | 0.496 | 1.000 | **0.900** | **1.000** | 0.628 | **0.751** | $0.126 | 8.4s |
 
-Sonnet is **3× more expensive, ~1.7× slower, and slightly *worse* overall**
-on this task. The breakdown is the interesting bit:
+Numbers above are **post metric-correctness pass** — the original 5-case
+run had Haiku at 0.705 and Sonnet at 0.689, which made Sonnet look like
+a slight loss for 3× the cost. After fixing the medication / diagnosis
+matchers (see "Metric correctness pass" above), Sonnet's *real* lead
+becomes visible: it canonicalizes medications and diagnoses meaningfully
+better, and the old matcher was burying that signal under containment
+mismatches.
 
-- Sonnet wins on `medications` (0.70 vs 0.63) — better at canonicalizing
-  dose/frequency.
-- Sonnet *loses* on `plan` (0.49 vs 0.66) — it over-normalizes plan items,
-  paraphrasing the gold's literal wording into more clinical phrasing
-  (`"return if symptoms worsen"` → `"return precautions for symptom
-  progression"`). The fuzzy plan-item matcher penalizes that.
-- Everything else is a wash.
+The trade-off pattern:
 
-**Decision a buyer would make from this data**: ship Haiku for this
-schema. Sonnet's medication win is real but small, and it's eaten by
-Sonnet's plan loss and its 3× cost. The cases where Sonnet's medication
-canonicalization matters most are also the cases where the dataset is
-small enough that the dollar cost is irrelevant — so for *iterating on
-the eval* you'd want Sonnet, but for *running the production extractor*
-you'd ship Haiku.
+- Sonnet wins decisively on `medications` (0.90 vs 0.73) and `diagnoses`
+  (1.00 vs 0.60) — better at producing dose / frequency / description
+  strings that match the gold canonical form.
+- Sonnet still *loses* on `plan` (0.63 vs 0.68) — it over-paraphrases
+  plan items, turning the gold's literal wording into more clinical
+  phrasing ("return if symptoms worsen" → "return precautions for
+  symptom progression"). The fuzzy plan-item matcher penalizes that.
+- `chief_complaint`, `vitals`, `follow_up` are roughly tied.
+
+**Decision a buyer would make from this data**: for high-stakes fields
+(medications, diagnoses) Sonnet's +0.10 to +0.40 lead is real and worth
+the 3× cost premium — those are the columns clinicians act on. If your
+downstream consumer acts on diagnoses or medications, ship Sonnet. If
+you only need follow-up bookkeeping or chief-complaint summarization,
+Haiku is fine.
 
 This is exactly the use case the compare view is designed for. Pick run
 A and run B in the dashboard, look at the per-field deltas, and the

@@ -1,29 +1,30 @@
 $ bun apps/server/src/cli/eval.ts "--strategy=few_shot" --force
 ▸ Strategy: few_shot
 ▸ Force: bypassing idempotency cache
-▸ Run ID: dbf7c50d-2f8f-4404-8966-f1510bc2b0cb
+▸ Estimate: 50 case(s) · ~13,477+272,930+5,570 in · ~22,000 out · projected $0.1577 (no-cache: $0.4020)
+▸ Run ID: 216ba2ea-02dd-4fde-afcb-aae34d385e30
 ▸ Prompt hash: 07791e5fad16
 ▸ Cases: 50
 
-  1  /50  done  · 0  failed  · mean=0.723  · 2.4s     2  /50  done  · 0  failed  · mean=0.793  · 2.4s     3  /50  done  · 0  failed  · mean=0.785  · 2.4s     4  /50  done  · 0  failed  · mean=0.731  · 2.5s     5  /50  done  · 0  failed  · mean=0.707  · 2.6s     6  /50  done  · 0  failed  · mean=0.678  · 4.5s     7  /50  done  · 0  failed  · mean=0.694  · 4.8s     8  /50  done  · 0  failed  · mean=0.714  · 5.0s     9  /50  done  · 0  failed  · mean=0.687  · 5.0s     10 /50  done  · 0  failed  · mean=0.685  · 5.1s     11 /50  done  · 0  failed  · mean=0.671  · 7.2s     12 /50  done  · 0  failed  · mean=0.665  · 7.4s     13 /50  done  · 0  failed  · mean=0.652  · 7.6s     14 /50  done  · 0  failed  · mean=0.647  · 7.7s     15 /50  done  · 0  failed  · mean=0.645  · 8.8s     16 /50  done  · 0  failed  · mean=0.647  · 14.3s     17 /50  done  · 0  failed  · mean=0.654  · 14.6s     18 /50  done  · 0  failed  · mean=0.654  · 14.8s     19 /50  done  · 0  failed  · mean=0.652  · 14.8s     20 /50  done  · 0  failed  · mean=0.660  · 15.1s     21 /50  done  · 0  failed  · mean=0.665  · 25.1s     22 /50  done  · 0  failed  · mean=0.662  · 25.4s     23 /50  done  · 0  failed  · mean=0.666  · 25.8s     24 /50  done  · 0  failed  · mean=0.660  · 25.9s     25 /50  done  · 0  failed  · mean=0.661  · 25.9s     26 /50  done  · 0  failed  · mean=0.662  · 36.1s     27 /50  done  · 0  failed  · mean=0.661  · 36.6s     28 /50  done  · 0  failed  · mean=0.659  · 36.7s     29 /50  done  · 0  failed  · mean=0.664  · 36.7s     30 /50  done  · 0  failed  · mean=0.655  · 36.7s     31 /50  done  · 0  failed  · mean=0.653  · 38.9s     32 /50  done  · 0  failed  · mean=0.654  · 47.6s     33 /50  done  · 0  failed  · mean=0.657  · 48.1s     34 /50  done  · 0  failed  · mean=0.658  · 48.1s     35 /50  done  · 0  failed  · mean=0.662  · 48.1s     36 /50  done  · 0  failed  · mean=0.656  · 48.6s     37 /50  done  · 0  failed  · mean=0.658  · 49.6s     38 /50  done  · 0  failed  · mean=0.657  · 61.2s     39 /50  done  · 0  failed  · mean=0.652  · 61.3s     40 /50  done  · 0  failed  · mean=0.652  · 62.1s     41 /50  done  · 0  failed  · mean=0.653  · 62.1s     42 /50  done  · 0  failed  · mean=0.653  · 62.6s     43 /50  done  · 0  failed  · mean=0.658  · 71.0s     44 /50  done  · 0  failed  · mean=0.660  · 71.3s     45 /50  done  · 0  failed  · mean=0.662  · 71.3s     46 /50  done  · 0  failed  · mean=0.665  · 71.9s     47 /50  done  · 0  failed  · mean=0.664  · 71.9s     48 /50  done  · 0  failed  · mean=0.666  · 81.3s     49 /50  done  · 0  failed  · mean=0.664  · 81.6s     50 /50  done  · 0  failed  · mean=0.660  · 82.0s   
+  1  /50  done  · 0  failed  · mean=0.842  · 2.2s     2  /50  done  · 0  failed  · mean=0.852  · 2.4s     3  /50  done  · 0  failed  · mean=0.761  · 2.6s     4  /50  done  · 0  failed  · mean=0.755  · 2.7s     5  /50  done  · 0  failed  · mean=0.774  · 3.5s     6  /50  done  · 0  failed  · mean=0.781  · 5.0s     7  /50  done  · 0  failed  · mean=0.760  · 5.1s     8  /50  done  · 0  failed  · mean=0.774  · 5.3s     9  /50  done  · 0  failed  · mean=0.787  · 5.8s     10 /50  done  · 0  failed  · mean=0.781  · 11.9s     11 /50  done  · 0  failed  · mean=0.766  · 12.5s     12 /50  done  · 0  failed  · mean=0.755  · 12.7s     13 /50  done  · 0  failed  · mean=0.748  · 12.7s     14 /50  done  · 0  failed  · mean=0.745  · 12.9s     15 /50  done  · 0  failed  · mean=0.752  · 14.4s     16 /50  done  · 0  failed  · mean=0.762  · 24.6s     17 /50  done  · 0  failed  · mean=0.763  · 25.0s     18 /50  done  · 0  failed  · mean=0.754  · 25.1s     19 /50  done  · 0  failed  · mean=0.752  · 25.2s     20 /50  done  · 0  failed  · mean=0.753  · 25.6s     21 /50  done  · 0  failed  · mean=0.754  · 35.8s     22 /50  done  · 0  failed  · mean=0.754  · 36.2s     23 /50  done  · 0  failed  · mean=0.752  · 36.2s     24 /50  done  · 0  failed  · mean=0.750  · 36.4s     25 /50  done  · 0  failed  · mean=0.746  · 36.5s     26 /50  done  · 0  failed  · mean=0.751  · 45.5s     27 /50  done  · 0  failed  · mean=0.746  · 45.8s     28 /50  done  · 0  failed  · mean=0.745  · 46.2s     29 /50  done  · 0  failed  · mean=0.738  · 46.2s     30 /50  done  · 0  failed  · mean=0.735  · 46.4s     31 /50  done  · 0  failed  · mean=0.739  · 56.0s     32 /50  done  · 0  failed  · mean=0.734  · 56.3s     33 /50  done  · 0  failed  · mean=0.734  · 56.4s     34 /50  done  · 0  failed  · mean=0.732  · 56.5s     35 /50  done  · 0  failed  · mean=0.725  · 57.0s     36 /50  done  · 0  failed  · mean=0.717  · 67.3s     37 /50  done  · 0  failed  · mean=0.718  · 67.4s     38 /50  done  · 0  failed  · mean=0.714  · 67.8s     39 /50  done  · 0  failed  · mean=0.716  · 68.3s     40 /50  done  · 0  failed  · mean=0.713  · 74.1s     41 /50  done  · 0  failed  · mean=0.712  · 74.6s     42 /50  done  · 0  failed  · mean=0.715  · 75.1s     43 /50  done  · 0  failed  · mean=0.714  · 76.4s     44 /50  done  · 0  failed  · mean=0.714  · 82.5s     45 /50  done  · 0  failed  · mean=0.716  · 83.5s     46 /50  done  · 0  failed  · mean=0.713  · 84.8s     47 /50  done  · 0  failed  · mean=0.717  · 86.7s     48 /50  done  · 0  failed  · mean=0.715  · 90.6s     49 /50  done  · 0  failed  · mean=0.715  · 91.6s     50 /50  done  · 0  failed  · mean=0.715  · 93.6s   
 
 Strategy:      few_shot
 Model:         claude-haiku-4-5-20251001
 Prompt hash:   07791e5fad169592626320f294c58d0b694568349df31114ec190ebe335405fa
 Cases:         50/50 completed (0 failed, 0 schema-invalid, 0 cached)
-Tokens:        15,336 in · 17,513 out · 287,910 cache_read · 31,990 cache_write
-Cost:          $0.1717
-Wall:          82.0s
-Hallucinated:  17 flagged values across 13 cases
+Tokens:        15,336 in · 17,337 out · 287,910 cache_read · 31,990 cache_write
+Cost:          $0.1708
+Wall:          93.6s
+Hallucinated:  14 flagged values across 11 cases
 
 Per-field scores:
   Field               Mean Score  
   ------------------  ------------
-  chief_complaint     0.4820      
+  chief_complaint     0.4908      
   vitals              0.9950      
-  medications         0.7004      
-  diagnoses           0.5200      
-  plan                0.5816      
-  follow_up           0.6811      
+  medications         0.7477      
+  diagnoses           0.7777      
+  plan                0.5796      
+  follow_up           0.7006      
 
-Overall:       0.6600
+Overall:       0.7152
