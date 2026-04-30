@@ -12,9 +12,12 @@ import {
   createRun,
   estimateRun,
   getCaseDetail,
+  getPromptDetail,
+  getPromptDiff,
   getRunCases,
   getRunSummary,
   listDisagreements,
+  listPrompts,
   listRuns,
   pauseRun,
   startRun,
@@ -118,6 +121,28 @@ app.get("/api/v1/runs/:id/cases", async (c) => {
 
 app.get("/api/v1/runs/:id/cases/:caseId", async (c) => {
   const detail = await getCaseDetail(c.req.param("id"), c.req.param("caseId"));
+  if (!detail) return c.json({ error: "not_found" }, 404);
+  return c.json(detail);
+});
+
+app.get("/api/v1/prompts", async (c) => {
+  const rows = await listPrompts();
+  return c.json({ prompts: rows });
+});
+
+// Order matters: `/diff` must be registered before `/:hash` so the literal
+// path doesn't match the parameterized one.
+app.get("/api/v1/prompts/diff", async (c) => {
+  const a = c.req.query("a");
+  const b = c.req.query("b");
+  if (!a || !b) return c.json({ error: "missing_params", required: ["a", "b"] }, 400);
+  const diff = await getPromptDiff({ hashA: a, hashB: b });
+  if (!diff) return c.json({ error: "not_found" }, 404);
+  return c.json(diff);
+});
+
+app.get("/api/v1/prompts/:hash", async (c) => {
+  const detail = await getPromptDetail(c.req.param("hash"));
   if (!detail) return c.json({ error: "not_found" }, 404);
   return c.json(detail);
 });

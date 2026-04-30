@@ -3,7 +3,14 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { createDb } from "@test-evals/db";
-import { attempts, cases, prompts, runs, type Run } from "@test-evals/db/schema/eval";
+import {
+  attempts,
+  cases,
+  prompts,
+  runs,
+  type Prompt,
+  type Run,
+} from "@test-evals/db/schema/eval";
 import { env } from "@test-evals/env/server";
 import { evaluateCase } from "@test-evals/eval";
 import {
@@ -682,6 +689,209 @@ export async function estimateRun(input: {
     cases_total: dataset.length,
     breakdown,
   };
+}
+
+// ---------- prompt diff view -----------------------------------------------
+//
+// The prompt-hash on every run row makes "which prompt produced this number?"
+// unambiguous. The /prompts pages are the inverse: given a hash, what's the
+// content, and how does it compare to another hash?
+
+export interface PromptListRow {
+  hash: string;
+  strategy: Strategy;
+  created_at: string;
+  runs_count: number;
+  cases_completed: number;
+  mean_overall_score: number | null;
+  total_cost_usd: number;
+}
+
+export async function listPrompts(): Promise<PromptListRow[]> {
+  const promptRows = await db().query.prompts.findMany({
+    orderBy: [desc(prompts.created_at)],
+  });
+  if (promptRows.length === 0) return [];
+  const runRows = await db().query.runs.findMany();
+  const out: PromptListRow[] = [];
+  for (const p of promptRows) {
+    const matching = runRows.filter((r) => r.prompt_hash === p.hash);
+    const completed = matching.reduce((n, r) => n + r.cases_completed, 0);
+    const totalCost = matching.reduce((n, r) => n + Number(r.cost_usd), 0);
+    // Aggregate overall_score across all matching cases — cheaper than
+    // per-run summary for a list view.
+    let scoreSum = 0;
+    let scoreCount = 0;
+    if (matching.length > 0) {
+      const matchingIds = matching.map((r) => r.id);
+      const completedCases = await db().query.cases.findMany({
+        where: and(
+          eq(cases.status, "completed"),
+          sql`${cases.run_id} IN (${sql.join(matchingIds.map((id) => sql`${id}`), sql`, `)})`,
+        ),
+      });
+      for (const c of completedCases) {
+        if (c.overall_score == null) continue;
+        scoreSum += Number(c.overall_score);
+        scoreCount++;
+      }
+    }
+    out.push({
+      hash: p.hash,
+      strategy: p.strategy as Strategy,
+      created_at: p.created_at.toISOString(),
+      runs_count: matching.length,
+      cases_completed: completed,
+      mean_overall_score: scoreCount > 0 ? scoreSum / scoreCount : null,
+      total_cost_usd: totalCost,
+    });
+  }
+  return out;
+}
+
+export interface PromptDetail {
+  prompt: {
+    hash: string;
+    strategy: Strategy;
+    system_prompt: string;
+    tool_definition: unknown;
+    few_shot_examples: unknown;
+    created_at: string;
+  };
+  runs: Array<{
+    id: string;
+    model: string;
+    status: RunStatus;
+    cases_total: number;
+    cases_completed: number;
+    overall_score: number | null;
+    cost_usd: number;
+    created_at: string;
+  }>;
+}
+
+export async function getPromptDetail(hash: string): Promise<PromptDetail | null> {
+  const promptRow = await db().query.prompts.findFirst({ where: eq(prompts.hash, hash) });
+  if (!promptRow) return null;
+  const runRows = await db().query.runs.findMany({ where: eq(runs.prompt_hash, hash) });
+
+  // Compute per-run overall_score from the cases (matches the run-detail page).
+  const runViews: PromptDetail["runs"] = [];
+  for (const r of runRows) {
+    const completedCases = await db().query.cases.findMany({
+      where: and(eq(cases.run_id, r.id), eq(cases.status, "completed")),
+    });
+    let sum = 0;
+    let count = 0;
+    for (const c of completedCases) {
+      if (c.overall_score == null) continue;
+      sum += Number(c.overall_score);
+      count++;
+    }
+    runViews.push({
+      id: r.id,
+      model: r.model,
+      status: r.status as RunStatus,
+      cases_total: r.cases_total,
+      cases_completed: r.cases_completed,
+      overall_score: count > 0 ? sum / count : null,
+      cost_usd: Number(r.cost_usd),
+      created_at: r.created_at.toISOString(),
+    });
+  }
+  runViews.sort((a, b) => (b.created_at > a.created_at ? 1 : -1));
+
+  return {
+    prompt: {
+      hash: promptRow.hash,
+      strategy: promptRow.strategy as Strategy,
+      system_prompt: promptRow.system_prompt,
+      tool_definition: promptRow.tool_definition,
+      few_shot_examples: promptRow.few_shot_examples,
+      created_at: promptRow.created_at.toISOString(),
+    },
+    runs: runViews,
+  };
+}
+
+export interface PromptDiff {
+  a: PromptDetail["prompt"];
+  b: PromptDetail["prompt"];
+  /** Cases where the same model+case_id was run under both prompts. */
+  regressions: Array<{
+    case_id: string;
+    model: string;
+    a_score: number;
+    b_score: number;
+    delta: number; // b - a
+  }>;
+}
+
+export async function getPromptDiff(args: {
+  hashA: string;
+  hashB: string;
+}): Promise<PromptDiff | null> {
+  const [a, b] = await Promise.all([
+    db().query.prompts.findFirst({ where: eq(prompts.hash, args.hashA) }),
+    db().query.prompts.findFirst({ where: eq(prompts.hash, args.hashB) }),
+  ]);
+  if (!a || !b) return null;
+
+  // Pull all completed cases under either prompt-hash, preserving model so we
+  // can join on (case_id, model).
+  const rows = await db()
+    .select({
+      case_id: cases.case_id,
+      overall_score: cases.overall_score,
+      prompt_hash: runs.prompt_hash,
+      model: runs.model,
+    })
+    .from(cases)
+    .innerJoin(runs, eq(cases.run_id, runs.id))
+    .where(
+      and(
+        eq(cases.status, "completed"),
+        sql`${runs.prompt_hash} IN (${args.hashA}, ${args.hashB})`,
+      ),
+    );
+
+  const aMap = new Map<string, number>();
+  const bMap = new Map<string, number>();
+  for (const r of rows) {
+    if (r.overall_score == null) continue;
+    const key = `${r.case_id}|${r.model}`;
+    const score = Number(r.overall_score);
+    if (r.prompt_hash === args.hashA) aMap.set(key, score);
+    else if (r.prompt_hash === args.hashB) bMap.set(key, score);
+  }
+
+  const regressions: PromptDiff["regressions"] = [];
+  for (const key of aMap.keys()) {
+    if (!bMap.has(key)) continue;
+    const [case_id, model] = key.split("|");
+    const aScore = aMap.get(key)!;
+    const bScore = bMap.get(key)!;
+    regressions.push({
+      case_id: case_id!,
+      model: model!,
+      a_score: aScore,
+      b_score: bScore,
+      delta: bScore - aScore,
+    });
+  }
+  // Sort by |delta| desc so the rows that moved most show up first.
+  regressions.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
+
+  const toView = (p: Prompt): PromptDetail["prompt"] => ({
+    hash: p.hash,
+    strategy: p.strategy as Strategy,
+    system_prompt: p.system_prompt,
+    tool_definition: p.tool_definition,
+    few_shot_examples: p.few_shot_examples,
+    created_at: p.created_at.toISOString(),
+  });
+
+  return { a: toView(a), b: toView(b), regressions };
 }
 
 // ---------- active-learning: disagreement across runs ----------------------

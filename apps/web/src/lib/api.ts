@@ -146,6 +146,77 @@ export async function getCaseDetail(
   return (await res.json()) as CaseDetailResponse;
 }
 
+// ---------- prompts (content + diff) ---------------------------------------
+
+export interface PromptListRow {
+  hash: string;
+  strategy: Strategy;
+  created_at: string;
+  runs_count: number;
+  cases_completed: number;
+  mean_overall_score: number | null;
+  total_cost_usd: number;
+}
+
+export async function listPrompts(): Promise<PromptListRow[]> {
+  const res = await fetch(`${BASE}/api/v1/prompts`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`listPrompts: ${res.status}`);
+  const json = (await res.json()) as { prompts: PromptListRow[] };
+  return json.prompts;
+}
+
+export interface PromptContent {
+  hash: string;
+  strategy: Strategy;
+  system_prompt: string;
+  tool_definition: unknown;
+  few_shot_examples: unknown;
+  created_at: string;
+}
+
+export interface PromptDetailResponse {
+  prompt: PromptContent;
+  runs: Array<{
+    id: string;
+    model: string;
+    status: RunStatus;
+    cases_total: number;
+    cases_completed: number;
+    overall_score: number | null;
+    cost_usd: number;
+    created_at: string;
+  }>;
+}
+
+export async function getPromptDetail(hash: string): Promise<PromptDetailResponse | null> {
+  const res = await fetch(`${BASE}/api/v1/prompts/${hash}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`getPromptDetail: ${res.status}`);
+  return (await res.json()) as PromptDetailResponse;
+}
+
+export interface PromptDiffResponse {
+  a: PromptContent;
+  b: PromptContent;
+  regressions: Array<{
+    case_id: string;
+    model: string;
+    a_score: number;
+    b_score: number;
+    delta: number;
+  }>;
+}
+
+export async function getPromptDiff(a: string, b: string): Promise<PromptDiffResponse | null> {
+  const url = new URL("/api/v1/prompts/diff", BASE);
+  url.searchParams.set("a", a);
+  url.searchParams.set("b", b);
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`getPromptDiff: ${res.status}`);
+  return (await res.json()) as PromptDiffResponse;
+}
+
 // ---------- pre-flight cost estimate ---------------------------------------
 
 export interface RunEstimate {
