@@ -1,5 +1,5 @@
 {
-  "extends": "@test-evals/config/tsconfig.base.json",
+  "extends": "@healosbench/config/tsconfig.base.json",
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,

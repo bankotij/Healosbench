@@ -1,4 +1,4 @@
-import type { FollowUp } from "@test-evals/shared";
+import type { FollowUp } from "@healosbench/shared";
 
 import { tokenSetRatio } from "./text";
 

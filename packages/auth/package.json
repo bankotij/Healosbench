@@ -1,5 +1,5 @@
 {
-  "name": "@test-evals/auth",
+  "name": "@healosbench/auth",
   "type": "module",
   "exports": {
     ".": {
@@ -11,14 +11,14 @@
   },
   "scripts": {},
   "dependencies": {
-    "@test-evals/db": "workspace:*",
-    "@test-evals/env": "workspace:*",
+    "@healosbench/db": "workspace:*",
+    "@healosbench/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@test-evals/config": "workspace:*",
+    "@healosbench/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

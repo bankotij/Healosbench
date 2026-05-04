@@ -1,4 +1,4 @@
-import type { GroundingSpan } from "@test-evals/eval";
+import type { GroundingSpan } from "@healosbench/eval";
 
 /**
  * Render a transcript with grounded ranges highlighted. The spans are

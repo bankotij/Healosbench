@@ -1,10 +1,10 @@
 {
-  "extends": "@test-evals/config/tsconfig.base.json",
+  "extends": "@healosbench/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "paths": {
-      "@test-evals/ui/*": ["./src/*"]
+      "@healosbench/ui/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

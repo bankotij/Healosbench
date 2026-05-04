@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { NewRunForm } from "@/components/eval/new-run-form";
 import { RunsTable } from "@/components/eval/runs-table";
 import type { RunListItem } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

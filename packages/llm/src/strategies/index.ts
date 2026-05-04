@@ -1,4 +1,4 @@
-import type { Strategy } from "@test-evals/shared";
+import type { Strategy } from "@healosbench/shared";
 
 import { cotStrategy } from "./cot";
 import { fewShotStrategy } from "./few_shot";

@@ -1,4 +1,4 @@
-import type { TokenUsage } from "@test-evals/shared";
+import type { TokenUsage } from "@healosbench/shared";
 
 // Per-million-token rates in USD.
 // Source: https://docs.anthropic.com/en/docs/about-claude/pricing

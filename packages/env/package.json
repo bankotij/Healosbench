@@ -1,5 +1,5 @@
 {
-  "name": "@test-evals/env",
+  "name": "@healosbench/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@test-evals/config": "workspace:*",
+    "@healosbench/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

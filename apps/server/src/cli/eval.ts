@@ -13,8 +13,8 @@
  * successfully (no schema_failures past the retry loop, no failed cases).
  */
 
-import { CostExceedsCapError } from "@test-evals/llm";
-import { STRATEGIES, type Strategy } from "@test-evals/shared";
+import { CostExceedsCapError } from "@healosbench/llm";
+import { STRATEGIES, type Strategy } from "@healosbench/shared";
 
 import {
   createRun,

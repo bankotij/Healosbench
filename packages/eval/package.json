@@ -1,5 +1,5 @@
 {
-  "name": "@test-evals/eval",
+  "name": "@healosbench/eval",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,11 +11,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@test-evals/shared": "workspace:*",
+    "@healosbench/shared": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@test-evals/config": "workspace:*",
+    "@healosbench/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

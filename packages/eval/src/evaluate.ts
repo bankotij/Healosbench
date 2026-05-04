@@ -3,7 +3,7 @@ import type {
   Extraction,
   FieldKey,
   FieldScore,
-} from "@test-evals/shared";
+} from "@healosbench/shared";
 
 import { scoreDiagnoses } from "./diagnoses";
 import { scoreFollowUp } from "./follow_up";

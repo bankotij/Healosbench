@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@test-evals/ui/components/button";
+import { Button } from "@healosbench/ui/components/button";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 

@@ -1,5 +1,5 @@
 {
-  "name": "test-evals",
+  "name": "healosbench",
   "private": true,
   "workspaces": {
     "packages": [
@@ -29,20 +29,20 @@
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @test-evals/db db:push",
-    "db:studio": "turbo -F @test-evals/db db:studio",
-    "db:generate": "turbo -F @test-evals/db db:generate",
-    "db:migrate": "turbo -F @test-evals/db db:migrate",
+    "db:push": "turbo -F @healosbench/db db:push",
+    "db:studio": "turbo -F @healosbench/db db:studio",
+    "db:generate": "turbo -F @healosbench/db db:generate",
+    "db:migrate": "turbo -F @healosbench/db db:migrate",
     "eval": "bun apps/server/src/cli/eval.ts",
     "test": "bun test packages/eval packages/llm packages/shared apps/server apps/web/test"
   },
   "dependencies": {
-    "@test-evals/env": "workspace:*",
+    "@healosbench/env": "workspace:*",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@test-evals/config": "workspace:*",
+    "@healosbench/config": "workspace:*",
     "@types/bun": "catalog:",
     "turbo": "^2.8.12",
     "typescript": "catalog:"

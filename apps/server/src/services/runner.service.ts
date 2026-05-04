@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 
-import { createDb } from "@test-evals/db";
+import { createDb } from "@healosbench/db";
 import {
   attempts,
   cases,
@@ -10,9 +10,9 @@ import {
   runs,
   type Prompt,
   type Run,
-} from "@test-evals/db/schema/eval";
-import { env } from "@test-evals/env/server";
-import { evaluateCase } from "@test-evals/eval";
+} from "@healosbench/db/schema/eval";
+import { env } from "@healosbench/env/server";
+import { evaluateCase } from "@healosbench/eval";
 import {
   CostExceedsCapError,
   Semaphore,
@@ -21,7 +21,7 @@ import {
   getStrategy,
   promptHash as computePromptHash,
   type EstimateBreakdown,
-} from "@test-evals/llm";
+} from "@healosbench/llm";
 import {
   ZERO_USAGE,
   addUsage,
@@ -33,7 +33,7 @@ import {
   type Strategy,
   type TokenUsage,
   loadDataset,
-} from "@test-evals/shared";
+} from "@healosbench/shared";
 
 import { emitRunEvent } from "./run_events";
 import { extractTranscript } from "./extract.service";

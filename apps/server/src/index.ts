@@ -1,7 +1,7 @@
-import { auth } from "@test-evals/auth";
-import { env } from "@test-evals/env/server";
-import { CostExceedsCapError } from "@test-evals/llm";
-import { CreateRunRequestSchema, StrategySchema } from "@test-evals/shared";
+import { auth } from "@healosbench/auth";
+import { env } from "@healosbench/env/server";
+import { CostExceedsCapError } from "@healosbench/llm";
+import { CreateRunRequestSchema, StrategySchema } from "@healosbench/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";

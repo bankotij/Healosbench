@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PromptDiffView } from "@/components/eval/prompt-diff-view";
 import type { PromptDiffResponse } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

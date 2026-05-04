@@ -1,4 +1,4 @@
-import type { Extraction } from "@test-evals/shared";
+import type { Extraction } from "@healosbench/shared";
 
 import { normalize } from "./text";
 

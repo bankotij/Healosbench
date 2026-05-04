@@ -1,4 +1,4 @@
-import type { Medication } from "@test-evals/shared";
+import type { Medication } from "@healosbench/shared";
 
 import { normalize, tokenSetRatio } from "./text";
 

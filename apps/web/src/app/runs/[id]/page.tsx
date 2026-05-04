@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { RunDetail } from "@/components/eval/run-detail";
 import type { RunCaseRow, RunSummaryResponse } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

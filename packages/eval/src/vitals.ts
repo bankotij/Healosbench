@@ -1,4 +1,4 @@
-import type { Vitals } from "@test-evals/shared";
+import type { Vitals } from "@healosbench/shared";
 
 /**
  * Per-sub-field 0/1 scoring for vitals, then averaged over the four

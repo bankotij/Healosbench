@@ -1,5 +1,5 @@
-import type { Extraction } from "@test-evals/shared/extraction";
-import type { FieldKey } from "@test-evals/shared/run";
+import type { Extraction } from "@healosbench/shared/extraction";
+import type { FieldKey } from "@healosbench/shared/run";
 
 import { ScoreBar } from "./score-bar";
 

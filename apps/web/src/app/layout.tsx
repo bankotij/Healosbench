@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "test-evals",
-  description: "test-evals",
+  title: "Healosbench",
+  description: "Structured clinical extraction evaluation harness",
 };
 
 export default function RootLayout({

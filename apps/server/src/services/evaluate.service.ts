@@ -1,5 +1,5 @@
-import { evaluateCase, type EvaluateInput } from "@test-evals/eval";
-import type { CaseEvaluation } from "@test-evals/shared";
+import { evaluateCase, type EvaluateInput } from "@healosbench/eval";
+import type { CaseEvaluation } from "@healosbench/shared";
 
 /**
  * Thin server-side wrapper around `packages/eval`. The metric logic lives

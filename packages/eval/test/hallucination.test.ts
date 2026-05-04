@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { detectHallucinations } from "../src/hallucination";
-import type { Extraction } from "@test-evals/shared";
+import type { Extraction } from "@healosbench/shared";
 
 const TRANSCRIPT = `Doctor: Good morning. What brings you in?
 Patient: I've had a sore throat for four days, with low-grade fever.

@@ -1,7 +1,7 @@
 "use client";
 
-import { env } from "@test-evals/env/web";
-import type { Extraction } from "@test-evals/shared/extraction";
+import { env } from "@healosbench/env/web";
+import type { Extraction } from "@healosbench/shared/extraction";
 import type {
   CaseEvaluation,
   CaseStatus,
@@ -11,7 +11,7 @@ import type {
   RunStatus,
   RunStreamEvent,
   Strategy,
-} from "@test-evals/shared/run";
+} from "@healosbench/shared/run";
 
 /**
  * Typed fetch wrappers around the server eval API. We hand-mirror the response

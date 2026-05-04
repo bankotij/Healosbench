@@ -7,10 +7,10 @@ import { CaseStatusBadge } from "@/components/eval/status-badge";
 import { TranscriptHighlight } from "@/components/eval/transcript-highlight";
 import type { CaseDetailResponse } from "@/lib/api";
 import { fmtCost, fmtDuration, fmtTokens, shortHash } from "@/lib/format";
-import { findGroundingSpans } from "@test-evals/eval";
-import { env } from "@test-evals/env/web";
-import type { Extraction } from "@test-evals/shared/extraction";
-import type { FieldKey } from "@test-evals/shared/run";
+import { findGroundingSpans } from "@healosbench/eval";
+import { env } from "@healosbench/env/web";
+import type { Extraction } from "@healosbench/shared/extraction";
+import type { FieldKey } from "@healosbench/shared/run";
 
 export const dynamic = "force-dynamic";
 

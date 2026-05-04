@@ -1,4 +1,4 @@
-import "@test-evals/env/web";
+import "@healosbench/env/web";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

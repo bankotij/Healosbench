@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@test-evals/ui/components/button";
-import { Input } from "@test-evals/ui/components/input";
-import { Label } from "@test-evals/ui/components/label";
+import { Button } from "@healosbench/ui/components/button";
+import { Input } from "@healosbench/ui/components/input";
+import { Label } from "@healosbench/ui/components/label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import z from "zod";

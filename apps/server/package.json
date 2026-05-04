@@ -12,12 +12,12 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@test-evals/auth": "workspace:*",
-    "@test-evals/db": "workspace:*",
-    "@test-evals/env": "workspace:*",
-    "@test-evals/eval": "workspace:*",
-    "@test-evals/llm": "workspace:*",
-    "@test-evals/shared": "workspace:*",
+    "@healosbench/auth": "workspace:*",
+    "@healosbench/db": "workspace:*",
+    "@healosbench/env": "workspace:*",
+    "@healosbench/eval": "workspace:*",
+    "@healosbench/llm": "workspace:*",
+    "@healosbench/shared": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
@@ -25,7 +25,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@test-evals/config": "workspace:*",
+    "@healosbench/config": "workspace:*",
     "@types/bun": "catalog:",
     "tsdown": "^0.21.9",
     "typescript": "catalog:"

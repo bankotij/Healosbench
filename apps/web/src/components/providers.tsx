@@ -1,6 +1,6 @@
 "use client";
 
-import { Toaster } from "@test-evals/ui/components/sonner";
+import { Toaster } from "@healosbench/ui/components/sonner";
 
 import { ThemeProvider } from "./theme-provider";
 

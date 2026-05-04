@@ -1,4 +1,4 @@
-import type { CaseStatus, RunStatus } from "@test-evals/shared/run";
+import type { CaseStatus, RunStatus } from "@healosbench/shared/run";
 
 const RUN_COLORS: Record<RunStatus, string> = {
   pending: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",

@@ -1,4 +1,4 @@
-import type { Diagnosis } from "@test-evals/shared";
+import type { Diagnosis } from "@healosbench/shared";
 
 import { tokens, tokenSetRatio } from "./text";
 

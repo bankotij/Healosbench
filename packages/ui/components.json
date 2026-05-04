@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@test-evals/ui/components",
-    "utils": "@test-evals/ui/lib/utils",
-    "hooks": "@test-evals/ui/hooks",
-    "lib": "@test-evals/ui/lib",
-    "ui": "@test-evals/ui/components"
+    "components": "@healosbench/ui/components",
+    "utils": "@healosbench/ui/lib/utils",
+    "hooks": "@healosbench/ui/hooks",
+    "lib": "@healosbench/ui/lib",
+    "ui": "@healosbench/ui/components"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

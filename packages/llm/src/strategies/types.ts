@@ -1,5 +1,5 @@
 import type { ToolDefinition } from "../tool";
-import type { Strategy } from "@test-evals/shared";
+import type { Strategy } from "@healosbench/shared";
 
 /**
  * Anthropic message-shape we use across strategies. We deliberately type

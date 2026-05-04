@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PromptsTable } from "@/components/eval/prompts-table";
 import type { PromptListRow } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

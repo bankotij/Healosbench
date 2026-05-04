@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PromptDetail } from "@/components/eval/prompt-detail";
 import type { PromptDetailResponse } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

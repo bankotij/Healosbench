@@ -6,7 +6,7 @@ import {
   type Strategy,
   type TokenUsage,
   validateExtraction,
-} from "@test-evals/shared";
+} from "@healosbench/shared";
 
 import { callAnthropic, type AnthropicCallOutput } from "./client";
 import { promptHash } from "./hash";

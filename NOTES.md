@@ -131,7 +131,7 @@ Three things make this layout pay off:
 - **`packages/shared` is the single source of truth** for the `Extraction`
   schema (Zod mirror of `data/schema.json`), the run/case/attempt DTOs,
   and the SSE event union. The web bundle imports from
-  `@test-evals/shared/extraction` and `/run` only — never the dataset
+  `@healosbench/shared/extraction` and `/run` only — never the dataset
   loader (which uses node:fs).
 
 ---

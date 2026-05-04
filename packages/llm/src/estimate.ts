@@ -1,4 +1,4 @@
-import type { Strategy, TokenUsage } from "@test-evals/shared";
+import type { Strategy, TokenUsage } from "@healosbench/shared";
 
 import { costUsd } from "./pricing";
 import { canonicalJSON } from "./hash";

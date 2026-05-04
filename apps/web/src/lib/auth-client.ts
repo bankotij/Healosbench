@@ -1,4 +1,4 @@
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({

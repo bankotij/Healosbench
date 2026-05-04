@@ -1,4 +1,4 @@
-import type { RunStreamEvent } from "@test-evals/shared";
+import type { RunStreamEvent } from "@healosbench/shared";
 
 /**
  * In-process pub/sub for SSE listeners. Per run-id we keep a Set of

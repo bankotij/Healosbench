@@ -12,9 +12,9 @@
 
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
-import { createDb } from "@test-evals/db";
-import { attempts, cases, runs } from "@test-evals/db/schema/eval";
-import { promptHash } from "@test-evals/llm";
+import { createDb } from "@healosbench/db";
+import { attempts, cases, runs } from "@healosbench/db/schema/eval";
+import { promptHash } from "@healosbench/llm";
 import { eq, inArray } from "drizzle-orm";
 
 // Case IDs the runner tests reuse. Anything previously persisted for these

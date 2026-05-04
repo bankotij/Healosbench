@@ -1,4 +1,4 @@
-import type { Extraction } from "@test-evals/shared";
+import type { Extraction } from "@healosbench/shared";
 
 /**
  * Held-out, synthetic few-shot examples. None of these are in the dataset

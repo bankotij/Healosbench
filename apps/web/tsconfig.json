@@ -21,7 +21,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@test-evals/ui/*": ["../../packages/ui/src/*"]
+      "@healosbench/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [

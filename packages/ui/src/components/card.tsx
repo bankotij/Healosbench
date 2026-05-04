@@ -1,4 +1,4 @@
-import { cn } from "@test-evals/ui/lib/utils";
+import { cn } from "@healosbench/ui/lib/utils";
 import * as React from "react";
 
 function Card({

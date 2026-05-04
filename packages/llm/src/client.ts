@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-import type { TokenUsage } from "@test-evals/shared";
+import type { TokenUsage } from "@healosbench/shared";
 
 import { withRateLimitRetry, type RetryOptions } from "./rate_limiter";
 import type { PromptMessage } from "./strategies/types";

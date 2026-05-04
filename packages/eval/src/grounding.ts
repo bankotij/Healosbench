@@ -1,4 +1,4 @@
-import type { Extraction } from "@test-evals/shared";
+import type { Extraction } from "@healosbench/shared";
 
 /**
  * Build a list of grounded ranges in the transcript for the prediction's

@@ -1,6 +1,6 @@
-import { extractStructured, type ExtractInput, type ExtractOutput } from "@test-evals/llm";
+import { extractStructured, type ExtractInput, type ExtractOutput } from "@healosbench/llm";
 
-import { env } from "@test-evals/env/server";
+import { env } from "@healosbench/env/server";
 
 /**
  * Server-facing wrapper around `packages/llm`. Stateless: transcript in,

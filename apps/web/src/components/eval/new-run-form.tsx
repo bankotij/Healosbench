@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@test-evals/ui/components/button";
+import { Button } from "@healosbench/ui/components/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import {
   type RunEstimate,
 } from "@/lib/api";
 import { fmtCost, fmtTokens } from "@/lib/format";
-import type { Strategy } from "@test-evals/shared/run";
+import type { Strategy } from "@healosbench/shared/run";
 
 const STRATEGIES: ReadonlyArray<{ id: Strategy; label: string; hint: string }> = [
   {

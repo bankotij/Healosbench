@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { TokenUsage } from "@test-evals/shared";
+import type { TokenUsage } from "@healosbench/shared";
 
 import { type AnthropicCallInput, type AnthropicCallOutput } from "../src/client";
 import { extractStructured } from "../src/extract";

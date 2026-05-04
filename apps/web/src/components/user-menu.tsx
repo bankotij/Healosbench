@@ -1,4 +1,4 @@
-import { Button } from "@test-evals/ui/components/button";
+import { Button } from "@healosbench/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@test-evals/ui/components/dropdown-menu";
-import { Skeleton } from "@test-evals/ui/components/skeleton";
+} from "@healosbench/ui/components/dropdown-menu";
+import { Skeleton } from "@healosbench/ui/components/skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

@@ -3,14 +3,14 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "test-evals",
+      "name": "healosbench",
       "dependencies": {
-        "@test-evals/env": "workspace:*",
+        "@healosbench/env": "workspace:*",
         "dotenv": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "turbo": "^2.8.12",
         "typescript": "catalog:",
@@ -19,12 +19,12 @@
     "apps/server": {
       "name": "server",
       "dependencies": {
-        "@test-evals/auth": "workspace:*",
-        "@test-evals/db": "workspace:*",
-        "@test-evals/env": "workspace:*",
-        "@test-evals/eval": "workspace:*",
-        "@test-evals/llm": "workspace:*",
-        "@test-evals/shared": "workspace:*",
+        "@healosbench/auth": "workspace:*",
+        "@healosbench/db": "workspace:*",
+        "@healosbench/env": "workspace:*",
+        "@healosbench/eval": "workspace:*",
+        "@healosbench/llm": "workspace:*",
+        "@healosbench/shared": "workspace:*",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
@@ -32,7 +32,7 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "tsdown": "^0.21.9",
         "typescript": "catalog:",
@@ -43,11 +43,11 @@
       "version": "0.1.0",
       "dependencies": {
         "@tanstack/react-form": "^1.28.0",
-        "@test-evals/auth": "workspace:*",
-        "@test-evals/env": "workspace:*",
-        "@test-evals/eval": "workspace:*",
-        "@test-evals/shared": "workspace:*",
-        "@test-evals/ui": "workspace:*",
+        "@healosbench/auth": "workspace:*",
+        "@healosbench/env": "workspace:*",
+        "@healosbench/eval": "workspace:*",
+        "@healosbench/shared": "workspace:*",
+        "@healosbench/ui": "workspace:*",
         "babel-plugin-react-compiler": "^1.0.0",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
@@ -61,7 +61,7 @@
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/node": "^20",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
@@ -70,41 +70,41 @@
       },
     },
     "packages/auth": {
-      "name": "@test-evals/auth",
+      "name": "@healosbench/auth",
       "dependencies": {
-        "@test-evals/db": "workspace:*",
-        "@test-evals/env": "workspace:*",
+        "@healosbench/db": "workspace:*",
+        "@healosbench/env": "workspace:*",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "typescript": "catalog:",
       },
     },
     "packages/config": {
-      "name": "@test-evals/config",
+      "name": "@healosbench/config",
       "version": "0.0.0",
     },
     "packages/db": {
-      "name": "@test-evals/db",
+      "name": "@healosbench/db",
       "dependencies": {
-        "@test-evals/env": "workspace:*",
+        "@healosbench/env": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
         "pg": "^8.17.1",
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/pg": "^8.16.0",
         "drizzle-kit": "^0.31.8",
         "typescript": "catalog:",
       },
     },
     "packages/env": {
-      "name": "@test-evals/env",
+      "name": "@healosbench/env",
       "version": "0.0.0",
       "dependencies": {
         "@t3-oss/env-core": "^0.13.1",
@@ -113,52 +113,52 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
     "packages/eval": {
-      "name": "@test-evals/eval",
+      "name": "@healosbench/eval",
       "version": "0.0.0",
       "dependencies": {
-        "@test-evals/shared": "workspace:*",
+        "@healosbench/shared": "workspace:*",
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
     "packages/llm": {
-      "name": "@test-evals/llm",
+      "name": "@healosbench/llm",
       "version": "0.0.0",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.69.0",
-        "@test-evals/shared": "workspace:*",
+        "@healosbench/shared": "workspace:*",
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
     "packages/shared": {
-      "name": "@test-evals/shared",
+      "name": "@healosbench/shared",
       "version": "0.0.0",
       "dependencies": {
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
     "packages/ui": {
-      "name": "@test-evals/ui",
+      "name": "@healosbench/ui",
       "version": "0.0.0",
       "dependencies": {
         "@base-ui/react": "^1.0.0",
@@ -174,7 +174,7 @@
         "tw-animate-css": "^1.3.4",
       },
       "devDependencies": {
-        "@test-evals/config": "workspace:*",
+        "@healosbench/config": "workspace:*",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "tailwindcss": "catalog:",
@@ -566,21 +566,21 @@
 
     "@tanstack/store": ["@tanstack/store@0.9.3", "", {}, "sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw=="],
 
-    "@test-evals/auth": ["@test-evals/auth@workspace:packages/auth"],
+    "@healosbench/auth": ["@healosbench/auth@workspace:packages/auth"],
 
-    "@test-evals/config": ["@test-evals/config@workspace:packages/config"],
+    "@healosbench/config": ["@healosbench/config@workspace:packages/config"],
 
-    "@test-evals/db": ["@test-evals/db@workspace:packages/db"],
+    "@healosbench/db": ["@healosbench/db@workspace:packages/db"],
 
-    "@test-evals/env": ["@test-evals/env@workspace:packages/env"],
+    "@healosbench/env": ["@healosbench/env@workspace:packages/env"],
 
-    "@test-evals/eval": ["@test-evals/eval@workspace:packages/eval"],
+    "@healosbench/eval": ["@healosbench/eval@workspace:packages/eval"],
 
-    "@test-evals/llm": ["@test-evals/llm@workspace:packages/llm"],
+    "@healosbench/llm": ["@healosbench/llm@workspace:packages/llm"],
 
-    "@test-evals/shared": ["@test-evals/shared@workspace:packages/shared"],
+    "@healosbench/shared": ["@healosbench/shared@workspace:packages/shared"],
 
-    "@test-evals/ui": ["@test-evals/ui@workspace:packages/ui"],
+    "@healosbench/ui": ["@healosbench/ui@workspace:packages/ui"],
 
     "@ts-morph/common": ["@ts-morph/common@0.27.0", "", { "dependencies": { "fast-glob": "^3.3.3", "minimatch": "^10.0.1", "path-browserify": "^1.0.1" } }, "sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ=="],
 

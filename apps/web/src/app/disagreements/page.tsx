@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { DisagreementsTable } from "@/components/eval/disagreements-table";
 import type { DisagreementRow } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

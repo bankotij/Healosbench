@@ -11,6 +11,8 @@ defensible "ship this prompt / model" call.
 > file) explicitly lists **deployment** under what they are not looking
 > for — everything runs locally on `:3001` (web) and `:8787` (server).
 
+**Monorepo identity:** root package **`healosbench`** · workspace scopes **`@healosbench/*`** (`db`, `llm`, `eval`, `shared`, `ui`, …).
+
 ---
 
 ## Quick start — verify the harness

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { findGroundingSpans } from "../src/grounding";
 
-import type { Extraction } from "@test-evals/shared";
+import type { Extraction } from "@healosbench/shared";
 
 const blank: Extraction = {
   chief_complaint: "",

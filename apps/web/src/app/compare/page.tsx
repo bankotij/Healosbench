@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { CompareView } from "@/components/eval/compare-view";
 import type { RunListItem } from "@/lib/api";
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

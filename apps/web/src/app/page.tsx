@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { env } from "@test-evals/env/web";
+import { env } from "@healosbench/env/web";
 
 export const dynamic = "force-dynamic";
 

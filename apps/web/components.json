@@ -13,8 +13,8 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "utils": "@test-evals/ui/lib/utils",
-    "ui": "@test-evals/ui/components",
+    "utils": "@healosbench/ui/lib/utils",
+    "ui": "@healosbench/ui/components",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
